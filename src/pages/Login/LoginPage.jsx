@@ -1,22 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function LoginPage() {
-  const [form, setForm] = useState({
-    cpf: "",
-    password: "",
-  });
+  const [form, setForm] = useState({ cpf: "", password: "" });
+  const [error, setError] = useState("");
+  const { login, isAuthenticated, loading } = useAuth();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) navigate("/dashboard", { replace: true });
+  }, [isAuthenticated, navigate]);
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((p) => ({ ...p, [name]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // depois vamos validar CPF/senha e redirecionar para /dashboard
-    console.log("login attempt:", form);
+    setError("");
+
+    const { ok, message } = await login(form.cpf.replace(/\D/g, ""), form.password);
+    if (!ok) {
+      setError(message || "Falha no login.");
+      return;
+    }
+
+    const redirect = params.get("redirectTo");
+    navigate(redirect ? decodeURIComponent(redirect) : "/dashboard", { replace: true });
   }
 
   return (
@@ -68,9 +83,9 @@ export default function LoginPage() {
       {/* RIGHT SIDE - LOGIN CARD */}
       <div className="flex items-center justify-center p-6 sm:p-8">
         <div className="w-full max-w-sm">
-          {/* topo / marca para mobile */}
           <div className="mb-8 lg:mb-10">
             <div className="flex items-center gap-3">
+              {/* sua marca/placeholder aqui */}
               <div className="h-10 w-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm uppercase shadow-md shadow-indigo-600/30">
                 CN
               </div>
@@ -85,21 +100,19 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* form card */}
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
             <form className="space-y-5" onSubmit={handleSubmit}>
               {/* CPF */}
               <div className="space-y-1">
-                <label
-                  htmlFor="cpf"
-                  className="text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="cpf" className="text-sm font-medium text-gray-700">
                   CPF
                 </label>
                 <Input
                   id="cpf"
                   name="cpf"
                   type="text"
+                  inputMode="numeric"
+                  pattern="\d*"
                   autoComplete="username"
                   placeholder="000.000.000-00"
                   value={form.cpf}
@@ -111,20 +124,13 @@ export default function LoginPage() {
               {/* Senha */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <label htmlFor="password" className="text-sm font-medium text-gray-700">
                     Senha
                   </label>
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
-                  >
+                  <button type="button" className="text-xs font-medium text-indigo-600 hover:text-indigo-500">
                     Esqueci a senha
                   </button>
                 </div>
-
                 <Input
                   id="password"
                   name="password"
@@ -137,21 +143,23 @@ export default function LoginPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full">
-                Entrar
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 ring-1 ring-red-200 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
             <p className="text-[11px] text-gray-500 text-center mt-6 leading-relaxed">
-              O uso deste sistema é restrito a servidores autorizados da
-              Secretaria Municipal de Gestão e Orçamento. Todas as ações são
-              registradas com identificação do usuário, data e hora.
+              O uso deste sistema é restrito. Todas as ações são registradas.
             </p>
           </div>
 
-          <p className="text-[11px] text-gray-400 text-center mt-6">
-            v0.1 • Uso interno
-          </p>
+          <p className="text-[11px] text-gray-400 text-center mt-6">v0.1 • Uso interno</p>
         </div>
       </div>
     </div>
