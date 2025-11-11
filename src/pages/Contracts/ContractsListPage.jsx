@@ -5,14 +5,14 @@ import ContractUploadModal from "./ContractUploadModal";
 /**
  * Lista de Contratos — página completa
  * - Busca simples
- * - Botão "Novo contrato" abre modal de upload (PDF apenas)
- * - Tabela responsiva com status padronizado
+ * - Botão "Novo contrato" abre modal de upload (PDF)
+ * - Recebe o contrato salvo pelo backend via onUploaded e atualiza a tabela
  */
 export default function ContractsListPage() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isUploadOpen, setUploadOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  // Mock inicial (substituir por dados da API no futuro)
+  // Mock inicial (até integrar com GET /contracts do servidor)
   const [contratos, setContratos] = useState([
     {
       numero: "Contrato 009/2025",
@@ -20,7 +20,7 @@ export default function ContractsListPage() {
       valorTotal: 10651.5,
       valorUsado: 6920.3,
       saldoRestante: 3731.2,
-      status: "OK", // "OK" | "BAIXO" | "ENCERRADO"
+      status: "OK",
     },
     {
       numero: "Contrato 014/2025",
@@ -60,17 +60,16 @@ export default function ContractsListPage() {
               Contratos
             </h1>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Acompanhamento de contratos vigentes, fornecedor e saldo
-              disponível.
+              Acompanhamento de contratos vigentes, fornecedor e saldo disponível.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
             <button
-              onClick={() => setIsOpen(true)}
+              onClick={() => setUploadOpen(true)}
               className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-sm shadow-indigo-600/30 w-full sm:w-auto"
             >
-              <Plus className="h-4 w-4 text-white" />
+              <Plus className="h-4 w-4 text-white"/>
               <span>Novo contrato</span>
             </button>
           </div>
@@ -79,12 +78,14 @@ export default function ContractsListPage() {
         {/* Linha 2: busca */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mt-6">
           <div className="text-xs text-gray-500 leading-relaxed">
-            <p>{list.length} contratos listados · controle interno da prefeitura</p>
+            <p>
+              {list.length} contratos listados · controle interno da prefeitura
+            </p>
           </div>
 
           <div className="flex items-center gap-2 w-full lg:w-64">
             <div className="flex items-center w-full rounded-xl ring-1 ring-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500">
-              <Search className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+              <Search className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0"/>
               <input
                 className="flex-1 outline-none placeholder-gray-400 text-sm text-gray-700 min-w-0"
                 placeholder="Buscar contrato, fornecedor..."
@@ -155,10 +156,11 @@ export default function ContractsListPage() {
                   {formatCurrency(c.saldoRestante)}
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap text-xs sm:text-sm">
-                  <StatusPill status={c.status} />
+                  <StatusPill status={c.status}/>
                 </td>
               </tr>
             ))}
+
             {list.length === 0 && (
               <tr>
                 <td
@@ -174,13 +176,18 @@ export default function ContractsListPage() {
         </div>
       </section>
 
-      {/* Modal — upload de PDF apenas */}
+      {/* Modal — upload de PDF */}
       <ContractUploadModal
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        onUploaded={(data) => {
-          // Ex.: se backend retornar metadados, pode atualizar a lista aqui.
-          // setContratos(prev => [{ numero: data.numero, ...data }, ...prev]);
+        open={isUploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={(savedContract) => {
+          if (!savedContract) return;
+
+          // Se o backend já devolver no formato certo, basta adicionar:
+          setContratos((prev) => [savedContract, ...prev]);
+
+          // Se o backend devolver com outros nomes de campos,
+          // adaptar aqui antes de adicionar à lista.
         }}
       />
     </div>
