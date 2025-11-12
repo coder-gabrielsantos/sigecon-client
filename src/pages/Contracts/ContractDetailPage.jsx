@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  getContractById,
-  updateContract,
-  deleteContract,
-} from "../../services/contractsService";
+import { getContractById, updateContract, deleteContract } from "../../services/contractsService";
 
+/** Página de detalhes do contrato */
 export default function ContractDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,34 +13,33 @@ export default function ContractDetailPage() {
   const [error, setError] = useState("");
   const [contract, setContract] = useState(null);
 
-  // Carrega contrato
   useEffect(() => {
-    let isMounted = true;
-
-    async function load() {
+    let alive = true;
+    (async () => {
       try {
         setLoading(true);
         const data = await getContractById(id);
-        if (isMounted) setContract(data);
+        if (!alive) return;
+        // normaliza datas (YYYY-MM-DD) para <input type="date">
+        setContract({
+          ...data,
+          startDate: normalizeDateForInput(data.startDate || data.start_date),
+          endDate: normalizeDateForInput(data.endDate || data.end_date),
+        });
       } catch (e) {
         console.error(e);
-        if (isMounted) setError("Não foi possível carregar o contrato.");
+        if (alive) setError("Não foi possível carregar o contrato.");
       } finally {
-        if (isMounted) setLoading(false);
+        if (alive) setLoading(false);
       }
-    }
-
-    load();
+    })();
     return () => {
-      isMounted = false;
+      alive = false;
     };
   }, [id]);
 
   const handleChange = (field, value) => {
-    setContract((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setContract((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async (e) => {
@@ -55,12 +51,17 @@ export default function ContractDetailPage() {
       const payload = {
         number: contract.number,
         supplier: contract.supplier,
-        totalAmount: contract.totalAmount,
-        startDate: contract.startDate,
-        endDate: contract.endDate,
+        totalAmount: num(contract.totalAmount),
+        startDate: contract.startDate || null,
+        endDate: contract.endDate || null,
       };
       const updated = await updateContract(id, payload);
-      setContract(updated);
+      // mantém datas normalizadas após retorno
+      setContract({
+        ...updated,
+        startDate: normalizeDateForInput(updated.startDate || updated.start_date),
+        endDate: normalizeDateForInput(updated.endDate || updated.end_date),
+      });
     } catch (e) {
       console.error(e);
       setError("Não foi possível salvar as alterações.");
@@ -70,9 +71,7 @@ export default function ContractDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Tem certeza que deseja excluir este contrato e todos os itens?")) {
-      return;
-    }
+    if (!window.confirm("Tem certeza que deseja excluir este contrato e todos os itens?")) return;
     try {
       setRemoving(true);
       await deleteContract(id);
@@ -86,7 +85,7 @@ export default function ContractDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="max-w-5xl mx-auto p-4 sm:p-6">
         <p className="text-sm text-gray-500">Carregando contrato...</p>
       </div>
     );
@@ -94,10 +93,8 @@ export default function ContractDetailPage() {
 
   if (!contract) {
     return (
-      <div className="p-6">
-        <p className="text-sm text-red-600">
-          Contrato não encontrado.
-        </p>
+      <div className="max-w-5xl mx-auto p-4 sm:p-6">
+        <p className="text-sm text-red-600">Contrato não encontrado.</p>
       </div>
     );
   }
@@ -106,12 +103,8 @@ export default function ContractDetailPage() {
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">
-            Detalhes do contrato
-          </h1>
-          <p className="text-xs text-gray-500">
-            Atualize os dados principais ou exclua o contrato.
-          </p>
+          <h1 className="text-lg font-semibold text-gray-900">Detalhes do contrato</h1>
+          <p className="text-xs text-gray-500">Atualize os dados principais ou exclua o contrato.</p>
         </div>
         <button
           type="button"
@@ -122,21 +115,12 @@ export default function ContractDetailPage() {
         </button>
       </div>
 
-      <form
-        onSubmit={handleSave}
-        className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4"
-      >
-        {error && (
-          <p className="text-xs text-red-600 mb-2">
-            {error}
-          </p>
-        )}
+      <form onSubmit={handleSave} className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4">
+        {error && <p className="text-xs text-red-600">{error}</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">
-              Número do contrato
-            </label>
+            <label className="block text-[11px] font-medium text-gray-600 mb-1">Número do contrato</label>
             <input
               type="text"
               value={contract.number || ""}
@@ -147,9 +131,7 @@ export default function ContractDetailPage() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">
-              Fornecedor
-            </label>
+            <label className="block text-[11px] font-medium text-gray-600 mb-1">Fornecedor</label>
             <input
               type="text"
               value={contract.supplier || ""}
@@ -159,51 +141,40 @@ export default function ContractDetailPage() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">
-              Valor total
-            </label>
+            <label className="block text-[11px] font-medium text-gray-600 mb-1">Valor total</label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={contract.totalAmount ?? ""}
-              onChange={(e) =>
-                handleChange("totalAmount", e.target.value)
-              }
+              onChange={(e) => handleChange("totalAmount", e.target.value)}
               className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="0,00"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                Início
-              </label>
+              <label className="block text-[11px] font-medium text-gray-600 mb-1">Início</label>
               <input
                 type="date"
                 value={contract.startDate || ""}
-                onChange={(e) =>
-                  handleChange("startDate", e.target.value)
-                }
+                onChange={(e) => handleChange("startDate", e.target.value)}
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                Fim
-              </label>
+              <label className="block text-[11px] font-medium text-gray-600 mb-1">Fim</label>
               <input
                 type="date"
                 value={contract.endDate || ""}
-                onChange={(e) =>
-                  handleChange("endDate", e.target.value)
-                }
+                onChange={(e) => handleChange("endDate", e.target.value)}
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 mt-4">
+        <div className="flex items-center justify-between gap-3 mt-2">
           <button
             type="button"
             onClick={handleDelete}
@@ -223,60 +194,156 @@ export default function ContractDetailPage() {
         </div>
       </form>
 
-      {/* Itens do contrato apenas leitura por enquanto */}
-      {Array.isArray(contract.items) && contract.items.length > 0 && (
-        <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">
-            Itens do contrato
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs">
-              <thead className="bg-gray-50 text-gray-500 uppercase">
-              <tr>
-                <th className="px-2 py-2 text-left">Item</th>
-                <th className="px-2 py-2 text-left">Descrição</th>
-                <th className="px-2 py-2 text-left">Unid.</th>
-                <th className="px-2 py-2 text-right">Qtd</th>
-                <th className="px-2 py-2 text-right">V. Unit.</th>
-                <th className="px-2 py-2 text-right">V. Total</th>
-              </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-              {contract.items.map((it) => (
-                <tr key={it.id}>
-                  <td className="px-2 py-1">{it.itemNo}</td>
-                  <td className="px-2 py-1">{it.description}</td>
-                  <td className="px-2 py-1">{it.unit}</td>
-                  <td className="px-2 py-1 text-right">
-                    {it.quantity}
-                  </td>
-                  <td className="px-2 py-1 text-right">
-                    {formatCurrency(it.unitPrice)}
-                  </td>
-                  <td className="px-2 py-1 text-right">
-                    {formatCurrency(it.totalPrice)}
-                  </td>
-                </tr>
-              ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-2 text-[10px] text-gray-400">
-            Edição detalhada dos itens pode ser adicionada depois. Por
-            enquanto, utilize o cabeçalho do contrato para ajustes gerais.
-          </p>
-        </section>
-      )}
+      <ContractItemsTable items={contract.items}/>
     </div>
   );
 }
 
-function formatCurrency(v) {
-  const num = Number(v);
-  if (Number.isNaN(num)) return "R$ 0,00";
-  return num.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
+/* ===================== TABELA DE ITENS ===================== */
+
+function ContractItemsTable({ items = [] }) {
+  // Filtra linhas inválidas (sem descrição / "total" / números todos nulos/zero)
+  const validItems = (items || []).filter((raw) => {
+    const desc = String(raw.description ?? "").trim();
+    if (!desc) return false;
+    if (/^total\b/i.test(desc) || /\btotal\b/i.test(desc)) return false;
+
+    const q = num(raw.quantity);
+    const vu = num(raw.unitPrice ?? raw.unit_price);
+    const vt = num(raw.totalPrice ?? raw.total_price);
+
+    const nums = [q, vu, vt].filter((n) => n !== null);
+    if (nums.length === 0) return false;
+    if (nums.every((n) => n === 0)) return false;
+
+    return true;
   });
+
+  // Ordena pelo item_no do banco quando existir
+  const sortedItems = [...validItems].sort((a, b) => {
+    const A = getItemNo(a);
+    const B = getItemNo(b);
+    if (A === null && B === null) return 0;
+    if (A === null) return 1;
+    if (B === null) return -1;
+    return A - B;
+  });
+
+  // TOTAL = soma da coluna V. Total
+  const totalGeral = sortedItems.reduce(
+    (s, it) => s + (num(it.totalPrice ?? it.total_price) || 0),
+    0
+  );
+
+  return (
+    <section className="bg-white rounded-2xl p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-gray-900">Itens do contrato</h2>
+        <span className="text-xs text-gray-500">{sortedItems.length} itens</span>
+      </div>
+
+      <table className="min-w-full text-xs sm:text-sm border-separate border-spacing-y-2">
+        <thead className="bg-indigo-50 text-indigo-700 uppercase text-[11px]">
+        <tr>
+          <th className="px-3 py-3 text-left">Item</th>
+          <th className="px-3 py-3 text-left">Descrição</th>
+          <th className="px-3 py-3 text-left">Unid.</th>
+          <th className="px-3 py-3 text-right">Qtd</th>
+          <th className="px-3 py-3 text-right">V. Unit.</th>
+          <th className="px-3 py-3 text-right">V. Total</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {sortedItems.map((it, i) => (
+          <tr
+            key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
+            className="bg-white even:bg-gray-50"
+          >
+            <td className="px-3 py-3 rounded-l-xl text-gray-700">
+              {displayItemNo(it, i)}
+            </td>
+            <td className="px-3 py-3 text-gray-800">{it.description}</td>
+            <td className="px-3 py-3">{it.unit}</td>
+            <td className="px-3 py-3 text-right tabular-nums">{fmtNum(it.quantity)}</td>
+            <td className="px-3 py-3 text-right tabular-nums">
+              {fmtMoney(it.unitPrice ?? it.unit_price)}
+            </td>
+            <td className="px-3 py-3 text-right tabular-nums rounded-r-xl font-medium text-gray-900">
+              {fmtMoney(it.totalPrice ?? it.total_price)}
+            </td>
+          </tr>
+        ))}
+        </tbody>
+
+        <tfoot>
+        <tr className="bg-white">
+          <td className="px-3 py-3 text-gray-600 rounded-l-xl" colSpan={5}>
+            Total dos itens
+          </td>
+          <td className="px-3 py-3 text-right rounded-r-xl font-semibold text-gray-900">
+            {fmtMoney(totalGeral)}
+          </td>
+        </tr>
+        </tfoot>
+      </table>
+    </section>
+  );
+}
+
+/* ===================== HELPERS ===================== */
+
+function normalizeDateForInput(value) {
+  if (!value) return "";
+  // aceita 'YYYY-MM-DD', ISO ou Date
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Parser BR para números e BRL */
+function sanitize(str) {
+  return String(str ?? "").replace(/\s+/g, "").replace(/R\$/gi, "");
+}
+
+function num(v) {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number") return v;
+  const raw = sanitize(v);
+
+  if (/^\d{1,3}(\.\d{3})+,\d{2}$/.test(raw)) return Number(raw.replace(/\./g, "").replace(",", "."));
+  if (/^\d+,\d{2}$/.test(raw)) return Number(raw.replace(",", "."));
+  if (/^\d+\.\d{2}$/.test(raw)) return Number(raw);
+  if (/^\d+$/.test(raw)) return Number(raw);
+
+  const n = Number(raw.replace(/\./g, "").replace(",", "."));
+  return Number.isNaN(n) ? null : n;
+}
+
+function fmtNum(v) {
+  const n = num(v);
+  if (n === null) return "";
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
+function fmtMoney(v) {
+  const n = num(v) ?? 0;
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+/** ITEM usando item_no do banco (fallback: índice) */
+function getItemNo(it) {
+  const raw = it.itemNo ?? it.item_no;
+  if (raw === null || raw === undefined) return null;
+  const digits = String(raw).match(/\d+/)?.[0];
+  const n = digits !== undefined ? Number(digits) : Number(raw);
+  return Number.isNaN(n) ? null : n;
+}
+
+function displayItemNo(it, idx) {
+  const n = getItemNo(it);
+  return n ?? idx + 1;
 }

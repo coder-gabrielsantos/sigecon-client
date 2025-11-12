@@ -1,42 +1,35 @@
 import { Search, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ContractUploadModal from "./ContractUploadModal";
+import { listContracts } from "../../services/contractsService";
 
 export default function ContractsListPage() {
+  const navigate = useNavigate();
   const [isUploadOpen, setUploadOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [contratos, setContratos] = useState([]);
 
-  // Mock inicial (até integrar GET /contracts real)
-  const [contratos, setContratos] = useState([
-    {
-      numero: "Contrato 009/2025",
-      fornecedor: "S. T. BORBA",
-      valorTotal: 10651.5,
-      valorUsado: 6920.3,
-      saldoRestante: 3731.2,
-      status: "OK",
-    },
-    {
-      numero: "Contrato 014/2025",
-      fornecedor: "Concretex Serviços",
-      valorTotal: 50000.0,
-      valorUsado: 48000.0,
-      saldoRestante: 2000.0,
-      status: "BAIXO",
-    },
-    {
-      numero: "Contrato 002/2024",
-      fornecedor: "Alpha Hidráulica",
-      valorTotal: 18000.0,
-      valorUsado: 18000.0,
-      saldoRestante: 0.0,
-      status: "ENCERRADO",
-    },
-  ]);
+  async function reload() {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await listContracts();
+      setContratos(data.map(normalizeSummaryFromApi));
+    } catch (e) {
+      console.error(e);
+      setError("Não foi possível carregar os contratos.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  // Filtro de busca simples (número do contrato ou fornecedor)
+  useEffect(() => {
+    reload();
+  }, []);
+
   const list = contratos.filter((c) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
@@ -75,7 +68,7 @@ export default function ContractsListPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mt-6">
           <div className="text-xs text-gray-500 leading-relaxed">
             <p>
-              {list.length} contratos listados · controle interno da prefeitura
+              {loading ? "Carregando..." : `${list.length} contratos listados`} · controle interno da prefeitura
             </p>
           </div>
 
@@ -93,9 +86,9 @@ export default function ContractsListPage() {
         </div>
       </section>
 
-      {/* TABELA DE CONTRATOS */}
+      {/* TABELA */}
       <section className="rounded-2xl ring-1 ring-gray-200 bg-white shadow-sm overflow-hidden">
-        {/* Header da tabela */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 px-4 py-4 border-b border-gray-200">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-gray-900 leading-tight">
@@ -106,43 +99,62 @@ export default function ContractsListPage() {
             </p>
           </div>
 
-          <button className="text-xs font-medium text-indigo-600 hover:text-indigo-500 w-fit">
-            Ver todos os detalhes
+          <button className="text-xs font-medium text-indigo-600 hover:text-indigo-500 w-fit" onClick={reload}>
+            Atualizar
           </button>
         </div>
 
-        {/* Tabela responsiva */}
+        {error && (
+          <div className="px-4 py-3 text-sm text-red-600">{error}</div>
+        )}
+
+        {/* Tabela */}
         <div className="w-full overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="text-gray-600 text-[11px] uppercase font-medium bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-4 py-3 whitespace-nowrap">Contrato</th>
               <th className="px-4 py-3 whitespace-nowrap">Fornecedor</th>
-              <th className="px-4 py-3 whitespace-nowrap text-right">
-                Valor total
-              </th>
-              <th className="px-4 py-3 whitespace-nowrap text-right">
-                Usado
-              </th>
-              <th className="px-4 py-3 whitespace-nowrap text-right">
-                Saldo
-              </th>
-              <th className="px-4 py-3 whitespace-nowrap text-right">
-                Status
-              </th>
+              <th className="px-4 py-3 whitespace-nowrap text-right">Valor total</th>
+              <th className="px-4 py-3 whitespace-nowrap text-right">Usado</th>
+              <th className="px-4 py-3 whitespace-nowrap text-right">Saldo</th>
+              <th className="px-4 py-3 whitespace-nowrap text-right">Status</th>
             </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-100 text-gray-700">
-            {list.map((c, idx) => (
+            {loading && (
+              <>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-3">
+                      <div className="h-3 bg-gray-200 rounded w-40"/>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-3 bg-gray-200 rounded w-48"/>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="h-3 bg-gray-200 rounded w-20 ml-auto"/>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="h-3 bg-gray-200 rounded w-20 ml-auto"/>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="h-3 bg-gray-200 rounded w-20 ml-auto"/>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="h-6 bg-gray-200 rounded w-24 ml-auto"/>
+                    </td>
+                  </tr>
+                ))}
+              </>
+            )}
+
+            {!loading && list.map((c, idx) => (
               <tr
                 key={c.id || idx}
                 className="align-top cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  if (c.id) {
-                    navigate(`/contracts/${c.id}`);
-                  }
-                }}
+                onClick={() => c.id && navigate(`/contracts/${c.id}`)}
               >
                 <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap text-xs sm:text-sm">
                   {c.numero}
@@ -165,13 +177,10 @@ export default function ContractsListPage() {
               </tr>
             ))}
 
-            {list.length === 0 && (
+            {!loading && list.length === 0 && (
               <tr>
-                <td
-                  className="px-4 py-10 text-center text-sm text-gray-500"
-                  colSpan={6}
-                >
-                  Nenhum contrato encontrado para “{query}”.
+                <td className="px-4 py-10 text-center text-sm text-gray-500" colSpan={6}>
+                  Nenhum contrato encontrado.
                 </td>
               </tr>
             )}
@@ -184,35 +193,22 @@ export default function ContractsListPage() {
       <ContractUploadModal
         open={isUploadOpen}
         onClose={() => setUploadOpen(false)}
-        onUploaded={(savedContract) => {
-          if (!savedContract) return;
-          const normalized = normalizeContractFromApi(savedContract);
-          setContratos((prev) => [normalized, ...prev]);
+        onUploaded={() => {
+          setUploadOpen(false);
+          reload(); // recarrega da API para garantir id/valores
         }}
       />
     </div>
   );
 }
 
-/** Converte resposta do backend para o formato da tabela */
-function normalizeContractFromApi(api) {
-  const id = api.id;
-
-  const numero =
-    api.number || api.numero || "Contrato importado (sem número)";
-  const fornecedor =
-    api.supplier || api.fornecedor || "Fornecedor não informado";
-
+/* ==== helpers & UI ==== */
+function normalizeSummaryFromApi(api) {
+  const numero = api.number || api.numero || "Contrato";
+  const fornecedor = api.supplier || api.fornecedor || "—";
   const valorTotal = Number(api.totalAmount ?? 0);
-
-  const valorUsado = Array.isArray(api.items)
-    ? api.items.reduce(
-      (sum, it) => sum + Number(it.totalPrice ?? it.total_price ?? 0),
-      0
-    )
-    : 0;
-
-  const saldoRestante = valorTotal - valorUsado;
+  const valorUsado = Number(api.usedAmount ?? 0);
+  const saldoRestante = Number(api.remainingAmount ?? (valorTotal - valorUsado));
 
   let status = "OK";
   if (valorTotal > 0) {
@@ -221,7 +217,7 @@ function normalizeContractFromApi(api) {
   }
 
   return {
-    id,
+    id: api.id,
     numero,
     fornecedor,
     valorTotal,
@@ -231,44 +227,20 @@ function normalizeContractFromApi(api) {
   };
 }
 
-/** Badge de status */
 function StatusPill({ status }) {
   const base =
     "inline-flex items-center justify-center rounded-lg px-2 py-1 text-[11px] font-medium ring-1 min-w-[110px] text-center";
   if (status === "OK")
-    return (
-      <span className={base + " bg-emerald-50 text-emerald-700 ring-emerald-200"}>
-        OK
-      </span>
-    );
+    return <span className={base + " bg-emerald-50 text-emerald-700 ring-emerald-200"}>OK</span>;
   if (status === "BAIXO")
-    return (
-      <span className={base + " bg-amber-50 text-amber-700 ring-amber-200"}>
-        Saldo baixo
-      </span>
-    );
+    return <span className={base + " bg-amber-50 text-amber-700 ring-amber-200"}>Saldo baixo</span>;
   if (status === "ENCERRADO")
-    return (
-      <span className={base + " bg-red-50 text-red-700 ring-red-200"}>
-        Encerrado
-      </span>
-    );
-  return (
-    <span className={base + " bg-gray-100 text-gray-700 ring-gray-200"}>
-      {status || "OK"}
-    </span>
-  );
+    return <span className={base + " bg-red-50 text-red-700 ring-red-200"}>Encerrado</span>;
+  return <span className={base + " bg-gray-100 text-gray-700 ring-gray-200"}>{status || "OK"}</span>;
 }
 
-/** Utilitário BRL defensivo */
 function formatCurrency(v) {
   const num = Number(v);
-  if (Number.isNaN(num)) {
-    return "R$ 0,00";
-  }
-  return num.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
+  if (Number.isNaN(num)) return "R$ 0,00";
+  return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 }

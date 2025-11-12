@@ -21,3 +21,8 @@ export async function updateContract(id, payload) {
 export async function deleteContract(id) {
   await http.delete(`/contracts/${id}`);
 }
+
+export async function listContracts() {
+  const res = await http.get("/contracts");
+  return res.data;
+}
