@@ -1,18 +1,14 @@
 import { Search, Plus } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ContractUploadModal from "./ContractUploadModal";
 
-/**
- * Lista de Contratos — página completa
- * - Busca simples
- * - Botão "Novo contrato" abre modal de upload (PDF)
- * - Recebe o contrato salvo pelo backend via onUploaded e atualiza a tabela
- */
 export default function ContractsListPage() {
   const [isUploadOpen, setUploadOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const navigate = useNavigate();
 
-  // Mock inicial (até integrar com GET /contracts do servidor)
+  // Mock inicial (até integrar GET /contracts real)
   const [contratos, setContratos] = useState([
     {
       numero: "Contrato 009/2025",
@@ -45,8 +41,8 @@ export default function ContractsListPage() {
     const q = query.trim().toLowerCase();
     if (!q) return true;
     return (
-      c.numero.toLowerCase().includes(q) ||
-      c.fornecedor.toLowerCase().includes(q)
+      (c.numero || "").toLowerCase().includes(q) ||
+      (c.fornecedor || "").toLowerCase().includes(q)
     );
   });
 
@@ -139,7 +135,15 @@ export default function ContractsListPage() {
 
             <tbody className="divide-y divide-gray-100 text-gray-700">
             {list.map((c, idx) => (
-              <tr key={idx} className="align-top">
+              <tr
+                key={c.id || idx}
+                className="align-top cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  if (c.id) {
+                    navigate(`/contracts/${c.id}`);
+                  }
+                }}
+              >
                 <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap text-xs sm:text-sm">
                   {c.numero}
                 </td>
@@ -182,19 +186,52 @@ export default function ContractsListPage() {
         onClose={() => setUploadOpen(false)}
         onUploaded={(savedContract) => {
           if (!savedContract) return;
-
-          // Se o backend já devolver no formato certo, basta adicionar:
-          setContratos((prev) => [savedContract, ...prev]);
-
-          // Se o backend devolver com outros nomes de campos,
-          // adaptar aqui antes de adicionar à lista.
+          const normalized = normalizeContractFromApi(savedContract);
+          setContratos((prev) => [normalized, ...prev]);
         }}
       />
     </div>
   );
 }
 
-/** Badge de status com largura padronizada e cores padrão */
+/** Converte resposta do backend para o formato da tabela */
+function normalizeContractFromApi(api) {
+  const id = api.id;
+
+  const numero =
+    api.number || api.numero || "Contrato importado (sem número)";
+  const fornecedor =
+    api.supplier || api.fornecedor || "Fornecedor não informado";
+
+  const valorTotal = Number(api.totalAmount ?? 0);
+
+  const valorUsado = Array.isArray(api.items)
+    ? api.items.reduce(
+      (sum, it) => sum + Number(it.totalPrice ?? it.total_price ?? 0),
+      0
+    )
+    : 0;
+
+  const saldoRestante = valorTotal - valorUsado;
+
+  let status = "OK";
+  if (valorTotal > 0) {
+    if (saldoRestante <= 0) status = "ENCERRADO";
+    else if (saldoRestante / valorTotal <= 0.1) status = "BAIXO";
+  }
+
+  return {
+    id,
+    numero,
+    fornecedor,
+    valorTotal,
+    valorUsado,
+    saldoRestante,
+    status,
+  };
+}
+
+/** Badge de status */
 function StatusPill({ status }) {
   const base =
     "inline-flex items-center justify-center rounded-lg px-2 py-1 text-[11px] font-medium ring-1 min-w-[110px] text-center";
@@ -218,14 +255,18 @@ function StatusPill({ status }) {
     );
   return (
     <span className={base + " bg-gray-100 text-gray-700 ring-gray-200"}>
-      {status}
+      {status || "OK"}
     </span>
   );
 }
 
-/** Utilitário BRL */
+/** Utilitário BRL defensivo */
 function formatCurrency(v) {
-  return v.toLocaleString("pt-BR", {
+  const num = Number(v);
+  if (Number.isNaN(num)) {
+    return "R$ 0,00";
+  }
+  return num.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
     minimumFractionDigits: 2,
