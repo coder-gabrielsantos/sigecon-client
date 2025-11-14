@@ -1,9 +1,10 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../pages/Login/LoginPage.jsx";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
-import DashboardPage from "../pages/Dashboard/DashboardPage.jsx";
 import ContractsListPage from "../pages/Contracts/ContractsListPage.jsx";
 import ContractDetailPage from "../pages/Contracts/ContractDetailPage.jsx";
+import OrdersListPage from "../pages/Orders/OrdersListPage.jsx";
+import UserPage from "../pages/User/UserPage.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 
 const router = createBrowserRouter([
@@ -21,14 +22,10 @@ const router = createBrowserRouter([
       {
         element: <DashboardLayout/>,
         children: [
-          // / -> /dashboard
+          // / -> /contracts
           {
             index: true,
-            element: <Navigate to="dashboard" replace/>,
-          },
-          {
-            path: "dashboard",
-            element: <DashboardPage/>,
+            element: <Navigate to="contracts" replace/>,
           },
           {
             path: "contracts",
@@ -38,15 +35,23 @@ const router = createBrowserRouter([
             path: "contracts/:id",
             element: <ContractDetailPage/>,
           },
+          {
+            path: "orders",
+            element: <OrdersListPage/>,
+          },
+          {
+            path: "user",
+            element: <UserPage/>,
+          },
         ],
       },
     ],
   },
 
-  // Qualquer rota desconhecida joga para /dashboard (protegido)
+  // Qualquer rota desconhecida joga para /contracts
   {
     path: "*",
-    element: <Navigate to="/dashboard" replace/>,
+    element: <Navigate to="/contracts" replace/>,
   },
 ]);
 

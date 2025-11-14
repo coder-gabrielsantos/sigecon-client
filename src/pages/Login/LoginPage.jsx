@@ -57,7 +57,7 @@ export default function LoginPage() {
     }
 
     const redirect = params.get("redirectTo");
-    navigate(redirect ? decodeURIComponent(redirect) : "/dashboard", {
+    navigate(redirect ? decodeURIComponent(redirect) : "/contracts", {
       replace: true,
     });
   }
