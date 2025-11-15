@@ -7,6 +7,7 @@ import {
   adminCreateUser,
   changeMyPassword,
   updateMyName,
+  getAllUsers,
 } from "../../services/authService";
 
 function formatCPF(value) {
@@ -68,6 +69,12 @@ export default function UserPage() {
   const [newUserSuccess, setNewUserSuccess] = useState("");
   const [newUserInitialPassword, setNewUserInitialPassword] = useState("");
 
+  // Listagem de usuários (admin)
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState("");
+
+  // ------- carregar perfil ---------
   useEffect(() => {
     let active = true;
 
@@ -100,6 +107,58 @@ export default function UserPage() {
 
   const isAdmin = profile?.role === "ADMIN";
 
+  // ------- carregar lista de usuários (somente admin) ---------
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    let active = true;
+
+    async function loadUsers() {
+      try {
+        setUsersLoading(true);
+        setUsersError("");
+        const data = await getAllUsers();
+        if (!active) return;
+        setUsers(data || []);
+      } catch (err) {
+        if (!active) return;
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err.message ||
+          "Erro ao carregar lista de usuários.";
+        setUsersError(msg);
+      } finally {
+        if (active) setUsersLoading(false);
+      }
+    }
+
+    loadUsers();
+
+    return () => {
+      active = false;
+    };
+  }, [isAdmin]);
+
+  async function refreshUsers() {
+    if (!isAdmin) return;
+    try {
+      setUsersLoading(true);
+      setUsersError("");
+      const data = await getAllUsers();
+      setUsers(data || []);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err.message ||
+        "Erro ao carregar lista de usuários.";
+      setUsersError(msg);
+    } finally {
+      setUsersLoading(false);
+    }
+  }
+
   // --------- Atualizar nome (chamando API) ----------
   async function handleSaveName(e) {
     e.preventDefault();
@@ -129,8 +188,7 @@ export default function UserPage() {
           user.nome = updatedProfile?.nome || novoNome;
           localStorage.setItem("sigecon_user", JSON.stringify(user));
         }
-      } catch (_) {
-      }
+      } catch (_) {}
 
       setTimeout(() => setNameMessage(""), 2500);
     } catch (err) {
@@ -244,6 +302,9 @@ export default function UserPage() {
       if (result?.senha_inicial) {
         setNewUserInitialPassword(result.senha_inicial);
       }
+
+      // recarrega lista de usuários após criar
+      await refreshUsers();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -274,7 +335,7 @@ export default function UserPage() {
         {/* topo: avatar + resumo */}
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center text-sm font-semibold shadow-md">
-            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6"/>}
+            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6" />}
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900">Meu perfil</p>
@@ -356,7 +417,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-gray-500"/>
+              <UserIcon className="h-4 w-4 text-gray-500" />
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Nome exibido
               </p>
@@ -394,7 +455,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <LockKeyhole className="h-4 w-4 text-gray-500"/>
+              <LockKeyhole className="h-4 w-4 text-gray-500" />
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Alterar senha
               </p>
@@ -459,7 +520,7 @@ export default function UserPage() {
         </div>
       </section>
 
-      {/* SEÇÃO 2: Novo usuário (ADMIN) */}
+      {/* SEÇÃO 2: Novo usuário + lista de usuários (ADMIN) */}
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-5">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">
@@ -471,7 +532,7 @@ export default function UserPage() {
             </p>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600 uppercase tracking-wide">
-            <Shield className="h-3 w-3"/>
+            <Shield className="h-3 w-3" />
             {isAdmin ? "ADMIN" : ""}
           </span>
         </div>
@@ -485,116 +546,185 @@ export default function UserPage() {
         )}
 
         {isAdmin && (
-          <form className="space-y-4" onSubmit={handleCreateNewUser}>
-            {/* Linha 1: Nome + CPF */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label
-                  htmlFor="novo-nome"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Nome completo
-                </label>
-                <Input
-                  id="novo-nome"
-                  name="nome"
-                  type="text"
-                  value={newUserForm.nome}
-                  onChange={handleNewUserChange}
-                  required
-                />
+          <>
+            {/* Form de criação */}
+            <form className="space-y-4" onSubmit={handleCreateNewUser}>
+              {/* Linha 1: Nome + CPF */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label
+                    htmlFor="novo-nome"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Nome completo
+                  </label>
+                  <Input
+                    id="novo-nome"
+                    name="nome"
+                    type="text"
+                    value={newUserForm.nome}
+                    onChange={handleNewUserChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor="novo-cpf"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    CPF
+                  </label>
+                  <Input
+                    id="novo-cpf"
+                    name="cpf"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={14}
+                    value={newUserForm.cpf}
+                    onChange={handleNewUserChange}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label
-                  htmlFor="novo-cpf"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  CPF
-                </label>
-                <Input
-                  id="novo-cpf"
-                  name="cpf"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={14}
-                  value={newUserForm.cpf}
-                  onChange={handleNewUserChange}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Linha 2: Perfil de acesso (seletor moderno) */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">
-                Perfil de acesso
-              </p>
-              <div className="inline-flex rounded-lg border border-gray-300 bg-gray-50 p-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setNewUserForm((prev) => ({ ...prev, role: "ADMIN" }))
-                  }
-                  className={`px-3 py-1.5 rounded-md font-medium transition ${
-                    newUserForm.role === "ADMIN"
-                      ? "bg-white text-indigo-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Administrador
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setNewUserForm((prev) => ({ ...prev, role: "OPERADOR" }))
-                  }
-                  className={`px-3 py-1.5 rounded-md font-medium transition ${
-                    newUserForm.role === "OPERADOR"
-                      ? "bg-white text-indigo-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  Operador
-                </button>
-              </div>
-              <p className="text-xs text-gray-500">
-                Administradores gerenciam usuários e configurações. Operadores
-                utilizam o sistema no dia a dia.
-              </p>
-            </div>
-
-            {/* Feedback */}
-            {newUserError && (
-              <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {newUserError}
-              </p>
-            )}
-            {newUserSuccess && (
-              <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-                {newUserSuccess}
-              </p>
-            )}
-
-            {newUserInitialPassword && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-800 space-y-1.5">
-                <p className="font-semibold">
-                  Senha inicial gerada para o novo usuário:
+              {/* Linha 2: Perfil de acesso (seletor moderno) */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">
+                  Perfil de acesso
                 </p>
-                <p className="font-mono text-sm">{newUserInitialPassword}</p>
-                <p>
-                  Anote essa senha e entregue ao usuário. Ela não será exibida
-                  novamente nesta tela.
+                <div className="inline-flex rounded-lg border border-gray-300 bg-gray-50 p-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewUserForm((prev) => ({ ...prev, role: "ADMIN" }))
+                    }
+                    className={`px-3 py-1.5 rounded-md font-medium transition ${
+                      newUserForm.role === "ADMIN"
+                        ? "bg-white text-indigo-700 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Administrador
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewUserForm((prev) => ({ ...prev, role: "OPERADOR" }))
+                    }
+                    className={`px-3 py-1.5 rounded-md font-medium transition ${
+                      newUserForm.role === "OPERADOR"
+                        ? "bg-white text-indigo-700 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Operador
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Administradores gerenciam usuários e configurações. Operadores
+                  utilizam o sistema no dia a dia.
                 </p>
               </div>
-            )}
 
-            <div className="pt-1">
-              <Button type="submit" disabled={newUserLoading}>
-                {newUserLoading ? "Criando usuário..." : "Criar usuário"}
-              </Button>
+              {/* Feedback criação */}
+              {newUserError && (
+                <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {newUserError}
+                </p>
+              )}
+              {newUserSuccess && (
+                <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                  {newUserSuccess}
+                </p>
+              )}
+
+              {newUserInitialPassword && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-800 space-y-1.5">
+                  <p className="font-semibold">
+                    Senha inicial gerada para o novo usuário:
+                  </p>
+                  <p className="font-mono text-sm">{newUserInitialPassword}</p>
+                  <p>
+                    Anote essa senha e entregue ao usuário. Ela não será exibida
+                    novamente nesta tela.
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-1">
+                <Button type="submit" disabled={newUserLoading}>
+                  {newUserLoading ? "Criando usuário..." : "Criar usuário"}
+                </Button>
+              </div>
+            </form>
+
+            {/* Lista de usuários cadastrados */}
+            <div className="border-t border-gray-100 pt-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-900">
+                  Usuários cadastrados
+                </p>
+                <button
+                  type="button"
+                  onClick={refreshUsers}
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                >
+                  Atualizar lista
+                </button>
+              </div>
+
+              {usersLoading ? (
+                <p className="text-xs text-gray-500">
+                  Carregando usuários cadastrados...
+                </p>
+              ) : usersError ? (
+                <p className="text-xs text-red-600">{usersError}</p>
+              ) : users.length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  Nenhum usuário cadastrado até o momento.
+                </p>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 max-h-72 overflow-auto">
+                  <table className="min-w-full text-xs">
+                    <thead>
+                    <tr className="bg-gray-100 text-[11px] text-gray-600 uppercase tracking-wide">
+                      <th className="px-3 py-2 text-left font-medium">
+                        Nome
+                      </th>
+                      <th className="px-3 py-2 text-left font-medium">
+                        CPF
+                      </th>
+                      <th className="px-3 py-2 text-left font-medium">
+                        Perfil
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {users.map((u) => (
+                      <tr
+                        key={u.id}
+                        className="border-t border-gray-200 text-gray-700"
+                      >
+                        <td className="px-3 py-2 text-left">
+                          <span className="font-medium">{u.nome}</span>
+                        </td>
+                        <td className="px-3 py-2 text-left">
+                          {formatCPF(u.cpf)}
+                        </td>
+                        <td className="px-3 py-2 text-left">
+                            <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-700 ring-1 ring-gray-200">
+                              {u.role}
+                            </span>
+                        </td>
+                      </tr>
+                    ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          </form>
+          </>
         )}
       </section>
     </div>

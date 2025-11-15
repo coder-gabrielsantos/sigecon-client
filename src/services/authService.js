@@ -2,7 +2,6 @@ import http from "./http";
 
 export async function loginRequest({ cpf, senha }) {
   const { data } = await http.post("/auth/login", { cpf, senha });
-  // esperado: { token, user: { id, nome, role, cpf? } }
   return data;
 }
 
@@ -14,7 +13,6 @@ export async function getMe() {
 // ADMIN cria novo usuário (ADMIN ou OPERADOR)
 export async function adminCreateUser({ nome, cpf, role }) {
   const { data } = await http.post("/usuarios", { nome, cpf, role });
-  // se o backend devolver senha_inicial, usamos na tela
   return data;
 }
 
@@ -30,7 +28,13 @@ export async function changeMyPassword({ senhaAtual, senhaNova }) {
 // usuário autenticado altera o próprio nome
 export async function updateMyName({ nome }) {
   const { data } = await http.put("/usuarios/me/nome", { nome });
-  return data; // perfil atualizado
+  return data;
+}
+
+// ADMIN lista todos os usuários
+export async function getAllUsers() {
+  const { data } = await http.get("/usuarios");
+  return data;
 }
 
 export function saveSession({ token, user }) {
