@@ -188,7 +188,8 @@ export default function UserPage() {
           user.nome = updatedProfile?.nome || novoNome;
           localStorage.setItem("sigecon_user", JSON.stringify(user));
         }
-      } catch (_) {}
+      } catch (_) {
+      }
 
       setTimeout(() => setNameMessage(""), 2500);
     } catch (err) {
@@ -335,7 +336,7 @@ export default function UserPage() {
         {/* topo: avatar + resumo */}
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center text-sm font-semibold shadow-md">
-            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6" />}
+            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6"/>}
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900">Meu perfil</p>
@@ -417,7 +418,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-gray-500" />
+              <UserIcon className="h-4 w-4 text-gray-500"/>
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Nome exibido
               </p>
@@ -455,7 +456,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <LockKeyhole className="h-4 w-4 text-gray-500" />
+              <LockKeyhole className="h-4 w-4 text-gray-500"/>
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Alterar senha
               </p>
@@ -532,7 +533,7 @@ export default function UserPage() {
             </p>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600 uppercase tracking-wide">
-            <Shield className="h-3 w-3" />
+            <Shield className="h-3 w-3"/>
             {isAdmin ? "ADMIN" : ""}
           </span>
         </div>
@@ -665,13 +666,6 @@ export default function UserPage() {
                 <p className="text-sm font-semibold text-gray-900">
                   Usuários cadastrados
                 </p>
-                <button
-                  type="button"
-                  onClick={refreshUsers}
-                  className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
-                >
-                  Atualizar lista
-                </button>
               </div>
 
               {usersLoading ? (
@@ -713,9 +707,9 @@ export default function UserPage() {
                           {formatCPF(u.cpf)}
                         </td>
                         <td className="px-3 py-2 text-left">
-                            <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-700 ring-1 ring-gray-200">
-                              {u.role}
-                            </span>
+                          <span className="text-xs font-medium text-gray-700">
+                            {u.role}
+                          </span>
                         </td>
                       </tr>
                     ))}
