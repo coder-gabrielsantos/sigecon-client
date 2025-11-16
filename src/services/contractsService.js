@@ -8,6 +8,11 @@ export async function createContractFromExtract(extractData, fileName) {
   return res.data;
 }
 
+export async function createEmptyContract(payload = {}) {
+  const res = await http.post("/contracts", payload);
+  return res.data;
+}
+
 export async function getContractById(id) {
   const res = await http.get(`/contracts/${id}`);
   return res.data;

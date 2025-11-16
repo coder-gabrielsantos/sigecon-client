@@ -193,9 +193,17 @@ export default function ContractsListPage() {
       <ContractUploadModal
         open={isUploadOpen}
         onClose={() => setUploadOpen(false)}
-        onUploaded={() => {
+        onUploaded={(contract) => {
           setUploadOpen(false);
-          reload(); // recarrega da API para garantir id/valores
+
+          // se o backend retornar o contrato recém-criado,
+          // já redirecionamos para a tela de detalhes:
+          if (contract && contract.id) {
+            navigate(`/contracts/${contract.id}`);
+          } else {
+            // fallback: só recarrega a lista
+            reload();
+          }
         }}
       />
     </div>

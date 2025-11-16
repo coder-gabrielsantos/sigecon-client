@@ -2,12 +2,16 @@ import { useState } from "react";
 import Modal from "../../components/ui/Modal";
 import UploadDropzone from "../../components/ui/UploadDropzone";
 import { extractContractTable } from "../../services/extractorService";
-import { createContractFromExtract } from "../../services/contractsService";
+import {
+  createContractFromExtract,
+  createEmptyContract,
+} from "../../services/contractsService";
 
 export default function ContractUploadModal({ open, onClose, onUploaded }) {
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [creatingEmpty, setCreatingEmpty] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState(false);
 
@@ -15,11 +19,13 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
     setFile(null);
     setProgress(0);
     setSubmitting(false);
+    setCreatingEmpty(false);
     setErr("");
     setOk(false);
   };
 
   const handleClose = () => {
+    if (submitting || creatingEmpty) return;
     resetState();
     onClose?.();
   };
@@ -27,6 +33,7 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
   const handleUpload = async (e) => {
     e?.preventDefault?.();
     setErr("");
+    setOk(false);
 
     if (!file) {
       setErr("Anexe o PDF do contrato.");
@@ -35,7 +42,6 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
 
     try {
       setSubmitting(true);
-      setOk(false);
       setProgress(0);
 
       // 1) Extrai do microserviço FastAPI
@@ -53,16 +59,18 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
 
       setOk(true);
 
-      // 3) Notifica o pai (ContractsListPage) para atualizar a lista
+      // 3) Notifica o pai
       onUploaded?.(savedContract);
 
       // 4) Fecha modal
-      handleClose();
+      resetState();
+      onClose?.();
     } catch (error) {
       console.error(error);
       const msg =
         error?.response?.data?.detail ||
         error?.response?.data?.message ||
+        error?.message ||
         "Não foi possível processar o contrato agora.";
       setErr(msg);
     } finally {
@@ -70,11 +78,35 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
     }
   };
 
+  // Criar contrato em branco (sem PDF)
+  const handleCreateEmptyContract = async () => {
+    setErr("");
+    setOk(false);
+    setCreatingEmpty(true);
+
+    try {
+      const contract = await createEmptyContract({});
+      onUploaded?.(contract);
+      resetState();
+      onClose?.();
+    } catch (error) {
+      console.error(error);
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Não foi possível criar o contrato em branco.";
+      setErr(msg);
+    } finally {
+      setCreatingEmpty(false);
+    }
+  };
+
   return (
     <Modal
       open={open}
       onClose={handleClose}
-      title="Upload de contrato (PDF)"
+      title="Novo contrato"
       footer={
         <div className="flex items-center justify-between gap-3 w-full">
           <div className="flex-1">
@@ -105,7 +137,7 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
               type="button"
               className="rounded-xl px-3 py-2 text-sm font-medium text-gray-700 bg-white ring-1 ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
               onClick={handleClose}
-              disabled={submitting}
+              disabled={submitting || creatingEmpty}
             >
               Cancelar
             </button>
@@ -113,9 +145,9 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
               type="button"
               onClick={handleUpload}
               className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-sm shadow-indigo-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
-              disabled={submitting || !file}
+              disabled={submitting || creatingEmpty || !file}
             >
-              {submitting ? "Processando..." : "Enviar PDF"}
+              {submitting ? "Processando..." : "Importar PDF"}
             </button>
           </div>
         </div>
@@ -123,18 +155,49 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-700">
-          Envie o contrato em PDF. A tabela será lida automaticamente e os dados
-          serão enviados para o sistema.
+          Envie o contrato em PDF para que a tabela de itens seja lida e
+          cadastrada automaticamente. Depois você poderá ajustar manualmente
+          os dados no detalhamento do contrato.
         </p>
 
         <UploadDropzone
           file={file}
           onFileChange={setFile}
           accept=".pdf"
-          disabled={submitting}
+          disabled={submitting || creatingEmpty}
           label="Arraste o PDF aqui ou clique para selecionar"
           helperText="Apenas arquivos PDF, até 20MB."
         />
+
+        {/* Separador visual */}
+        <div className="flex items-center gap-3 pt-2">
+          <div className="flex-1 h-px bg-gray-200"/>
+          <span className="text-[11px] uppercase tracking-wide text-gray-400">
+            ou
+          </span>
+          <div className="flex-1 h-px bg-gray-200"/>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="text-xs text-gray-600">
+            <p className="font-medium text-gray-800">
+              Criar contrato em branco
+            </p>
+            <p>
+              Use esta opção quando quiser cadastrar o contrato primeiro e
+              adicionar os itens manualmente.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCreateEmptyContract}
+            disabled={creatingEmpty || submitting}
+            className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-4 py-2 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+          >
+            {creatingEmpty ? "Criando..." : "Criar contrato em branco"}
+          </button>
+        </div>
       </div>
     </Modal>
   );
