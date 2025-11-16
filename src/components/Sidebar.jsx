@@ -1,7 +1,18 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, FileText, BarChart3 } from "lucide-react";
+import { LayoutDashboard, FileText, BarChart3, LogOut } from "lucide-react";
+import { clearSession } from "../services/authService";
 
 export default function Sidebar() {
+  function handleLogout() {
+    try {
+      clearSession();
+    } catch (e) {
+      // ignora erros de localStorage
+    }
+    // Recarrega a página; o ProtectedRoute redireciona para /login?redirectTo=...
+    window.location.reload();
+  }
+
   return (
     <aside className="flex flex-col w-64 bg-gray-900 text-white h-screen">
       {/* topo / branding */}
@@ -32,8 +43,18 @@ export default function Sidebar() {
         </SidebarLink>
       </nav>
 
-      <div className="px-4 py-4 border-t border-white/10 text-[11px] text-white/40">
-        v0.1 protótipo
+      {/* footer + logout */}
+      <div className="px-4 py-4 border-t border-white/10 flex items-center justify-between text-[11px]">
+        <span className="text-white/40">v0.1 protótipo</span>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white hover:bg-white/5 px-2 py-1 rounded-lg transition"
+        >
+          <LogOut className="h-3.5 w-3.5"/>
+          <span>Sair</span>
+        </button>
       </div>
     </aside>
   );
