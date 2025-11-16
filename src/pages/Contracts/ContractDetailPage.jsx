@@ -555,7 +555,9 @@ function ContractItemsTable({ items = [] }) {
               <td className="px-3 py-3 rounded-l-xl text-gray-700">
                 {displayItemNo(it, i)}
               </td>
-              <td className="px-3 py-3 text-gray-800">{it.description}</td>
+              <td className="px-3 py-2 text-gray-800 max-w-[320px] whitespace-nowrap overflow-hidden text-ellipsis">
+                {it.description}
+              </td>
               <td className="px-3 py-3">{it.unit}</td>
               <td className="px-3 py-3 text-right tabular-nums">
                 {fmtNum(it.quantity)}
