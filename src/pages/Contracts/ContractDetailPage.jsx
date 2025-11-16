@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getContractById, updateContract, deleteContract } from "../../services/contractsService";
+import {
+  getContractById,
+  updateContract,
+  deleteContract,
+  updateContractItem,
+} from "../../services/contractsService";
 
 /** Página de detalhes do contrato */
 export default function ContractDetailPage() {
@@ -82,6 +87,18 @@ export default function ContractDetailPage() {
     }
   };
 
+  const handleItemsUpdated = (updatedContract) => {
+    setContract({
+      ...updatedContract,
+      startDate: normalizeDateForInput(
+        updatedContract.startDate || updatedContract.start_date
+      ),
+      endDate: normalizeDateForInput(
+        updatedContract.endDate || updatedContract.end_date
+      ),
+    });
+  };
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
@@ -103,7 +120,9 @@ export default function ContractDetailPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">Detalhes do contrato</h1>
-          <p className="text-xs text-gray-500">Atualize os dados principais ou exclua o contrato.</p>
+          <p className="text-xs text-gray-500">
+            Atualize os dados principais ou exclua o contrato.
+          </p>
         </div>
         <button
           type="button"
@@ -114,9 +133,10 @@ export default function ContractDetailPage() {
         </button>
       </div>
 
-      {/* Resumo financeiro do contrato (usa soma dos itens) */}
+      {/* Resumo financeiro do contrato */}
       <ContractFinancialSummary contract={contract}/>
 
+      {/* Formulário de dados gerais */}
       <form
         onSubmit={handleSave}
         className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4"
@@ -195,6 +215,13 @@ export default function ContractDetailPage() {
         </div>
       </form>
 
+      {/* NOVO: adicionar ou atualizar item pelo mesmo formulário */}
+      <ContractItemForm
+        contractId={id}
+        onUpdated={handleItemsUpdated}
+      />
+
+      {/* Tabela de itens */}
       <ContractItemsTable items={contract.items}/>
     </div>
   );
@@ -206,17 +233,21 @@ function ContractFinancialSummary({ contract }) {
   if (!contract) return null;
 
   const { totalGeral } = prepareContractItems(contract.items || []);
+  const total = totalGeral;
 
-  // No futuro, se o backend passar usedAmount / remainingAmount / status,
-  // eles entram aqui. Por enquanto, deixamos "—" para esses campos.
-  const usado = contract.usedAmount ?? contract.used_amount;
-  const saldo = contract.remainingAmount ?? contract.remaining_amount;
-  const status = contract.status;
+  const usedRaw = contract.usedAmount ?? contract.used_amount;
+  const used = usedRaw != null ? num(usedRaw) ?? 0 : 0;
 
-  const displayMoney = (v) => {
-    if (v === undefined || v === null) return "—";
-    return fmtMoney(v);
-  };
+  const remainingRaw = contract.remainingAmount ?? contract.remaining_amount;
+  const remaining =
+    remainingRaw != null ? num(remainingRaw) ?? 0 : total - used;
+
+  let status = contract.status;
+  if (!status && total > 0) {
+    if (remaining <= 0) status = "ENCERRADO";
+    else if (remaining / total <= 0.1) status = "BAIXO";
+    else status = "OK";
+  }
 
   const displayStatus = status || "—";
 
@@ -234,37 +265,33 @@ function ContractFinancialSummary({ contract }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {/* Valor total = soma dos itens filtrados (totalGeral) */}
         <div className="space-y-1">
           <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
             Valor total do contrato
           </p>
           <p className="text-sm font-semibold text-gray-900">
-            {fmtMoney(totalGeral)}
+            {fmtMoney(total)}
           </p>
         </div>
 
-        {/* Valor utilizado (quando backend fornecer) */}
         <div className="space-y-1">
           <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
             Valor utilizado
           </p>
           <p className="text-sm font-semibold text-gray-900">
-            {displayMoney(usado)}
+            {fmtMoney(used)}
           </p>
         </div>
 
-        {/* Saldo restante (quando backend fornecer) */}
         <div className="space-y-1">
           <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
             Saldo restante
           </p>
           <p className="text-sm font-semibold text-gray-900">
-            {displayMoney(saldo)}
+            {fmtMoney(remaining)}
           </p>
         </div>
 
-        {/* Status (quando backend fornecer) */}
         <div className="space-y-1">
           <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
             Status
@@ -274,6 +301,222 @@ function ContractFinancialSummary({ contract }) {
           </span>
         </div>
       </div>
+    </section>
+  );
+}
+
+/* ===================== FORM DE ITEM ===================== */
+/**
+ * Regra:
+ * - Se o usuário informar um Nº do item que já existe, ele será ATUALIZADO.
+ * - Se deixar o Nº do item em branco, será ADICIONADO um novo item ao contrato.
+ */
+function ContractItemForm({ contractId, onUpdated }) {
+  const [itemNo, setItemNo] = useState("");
+  const [form, setForm] = useState({
+    description: "",
+    unit: "",
+    quantity: "",
+    unitPrice: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    const hasAnyField =
+      form.description.trim() ||
+      form.unit.trim() ||
+      form.quantity.trim() ||
+      form.unitPrice.trim();
+
+    if (!hasAnyField) {
+      setError("Preencha pelo menos um campo do item.");
+      return;
+    }
+
+    const payload = {};
+
+    const itemNoTrim = String(itemNo || "").trim();
+    if (itemNoTrim) {
+      const n = Number(itemNoTrim);
+      if (!n || Number.isNaN(n)) {
+        setError(
+          "Informe um número de item válido ou deixe em branco para adicionar."
+        );
+        return;
+      }
+      payload.itemNo = n;
+    }
+
+    const qNum = form.quantity.trim() !== "" ? num(form.quantity) : null;
+    const vuNum = form.unitPrice.trim() !== "" ? num(form.unitPrice) : null;
+
+    if (form.description.trim()) payload.description = form.description.trim();
+    if (form.unit.trim()) payload.unit = form.unit.trim();
+    if (qNum != null) payload.quantity = qNum;
+    if (vuNum != null) payload.unitPrice = vuNum;
+
+    // total calculado internamente (qtd x v.unit)
+    if (qNum != null && vuNum != null) {
+      payload.totalPrice = qNum * vuNum;
+    }
+
+    try {
+      setLoading(true);
+      const updatedContract = await updateContractItem(contractId, payload);
+      setSuccess(
+        payload.itemNo
+          ? "Item atualizado com sucesso."
+          : "Novo item adicionado ao contrato."
+      );
+      setError("");
+      setForm({
+        description: "",
+        unit: "",
+        quantity: "",
+        unitPrice: "",
+      });
+      setItemNo("");
+      setTimeout(() => setSuccess(""), 2500);
+      onUpdated?.(updatedContract);
+    } catch (err) {
+      console.error(err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Não foi possível salvar o item.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">
+            Itens do contrato — adicionar ou atualizar
+          </h2>
+          <p className="text-[11px] text-gray-500">
+            Para atualizar, informe o número do item. Para adicionar um novo,
+            deixe o campo de número em branco.
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Inputs em linha no desktop, empilhados no mobile */}
+        <div className="grid gap-3 sm:grid-cols-12">
+          {/* Nº do item (compacto) */}
+          <div className="space-y-1 sm:col-span-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Item
+            </label>
+            <input
+              type="number"
+              min={1}
+              value={itemNo}
+              onChange={(e) => setItemNo(e.target.value)}
+              placeholder=""
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* Descrição (larga) */}
+          <div className="space-y-1 sm:col-span-5">
+            <label className="text-[11px] font-medium text-gray-600">
+              Descrição
+            </label>
+            <input
+              name="description"
+              type="text"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Ex: Tubo PVC soldável 50mm..."
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* Unidade (compacto) */}
+          <div className="space-y-1 sm:col-span-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Unidade
+            </label>
+            <input
+              name="unit"
+              type="text"
+              value={form.unit}
+              onChange={handleChange}
+              placeholder="UN, CJ"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* Quantidade (compacto) */}
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-[11px] font-medium text-gray-600">
+              Quantidade
+            </label>
+            <input
+              name="quantity"
+              type="text"
+              value={form.quantity}
+              onChange={handleChange}
+              placeholder="Ex: 100"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* V. unitário (compacto) */}
+          <div className="space-y-1 sm:col-span-3">
+            <label className="text-[11px] font-medium text-gray-600">
+              V. unitário
+            </label>
+            <input
+              name="unitPrice"
+              type="text"
+              value={form.unitPrice}
+              onChange={handleChange}
+              placeholder="Ex: 1234,56"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+        </div>
+
+        {error && (
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
+        {success && (
+          <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            {success}
+          </p>
+        )}
+
+        {/* Botão embaixo, alinhado à direita, igual ao "Salvar alterações" */}
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+          >
+            {loading ? "Salvando item..." : "Salvar item"}
+          </button>
+        </div>
+      </form>
     </section>
   );
 }
@@ -290,53 +533,55 @@ function ContractItemsTable({ items = [] }) {
         <span className="text-xs text-gray-500">{sortedItems.length} itens</span>
       </div>
 
-      <table className="min-w-full text-xs sm:text-sm border-separate border-spacing-y-2">
-        <thead className="bg-indigo-50 text-indigo-700 uppercase text-[11px]">
-        <tr>
-          <th className="px-3 py-3 text-left">Item</th>
-          <th className="px-3 py-3 text-left">Descrição</th>
-          <th className="px-3 py-3 text-left">Unid.</th>
-          <th className="px-3 py-3 text-right">Qtd</th>
-          <th className="px-3 py-3 text-right">V. Unit.</th>
-          <th className="px-3 py-3 text-right">V. Total</th>
-        </tr>
-        </thead>
+      <div className="w-full overflow-x-auto">
+        <table className="min-w-full text-xs sm:text-sm border-separate border-spacing-y-2">
+          <thead className="bg-indigo-50 text-indigo-700 uppercase text-[11px]">
+          <tr>
+            <th className="px-3 py-3 text-left">Item</th>
+            <th className="px-3 py-3 text-left">Descrição</th>
+            <th className="px-3 py-3 text-left">Unid.</th>
+            <th className="px-3 py-3 text-right">Qtd</th>
+            <th className="px-3 py-3 text-right">V. Unit.</th>
+            <th className="px-3 py-3 text-right">V. Total</th>
+          </tr>
+          </thead>
 
-        <tbody>
-        {sortedItems.map((it, i) => (
-          <tr
-            key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
-            className="bg-white even:bg-gray-50"
-          >
-            <td className="px-3 py-3 rounded-l-xl text-gray-700">
-              {displayItemNo(it, i)}
+          <tbody>
+          {sortedItems.map((it, i) => (
+            <tr
+              key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
+              className="bg-white even:bg-gray-50"
+            >
+              <td className="px-3 py-3 rounded-l-xl text-gray-700">
+                {displayItemNo(it, i)}
+              </td>
+              <td className="px-3 py-3 text-gray-800">{it.description}</td>
+              <td className="px-3 py-3">{it.unit}</td>
+              <td className="px-3 py-3 text-right tabular-nums">
+                {fmtNum(it.quantity)}
+              </td>
+              <td className="px-3 py-3 text-right tabular-nums">
+                {fmtMoney(it.unitPrice ?? it.unit_price)}
+              </td>
+              <td className="px-3 py-3 text-right tabular-nums rounded-r-xl font-medium text-gray-900">
+                {fmtMoney(it.totalPrice ?? it.total_price)}
+              </td>
+            </tr>
+          ))}
+          </tbody>
+
+          <tfoot>
+          <tr className="bg-white">
+            <td className="px-3 py-3 text-gray-600 rounded-l-xl" colSpan={5}>
+              Total dos itens
             </td>
-            <td className="px-3 py-3 text-gray-800">{it.description}</td>
-            <td className="px-3 py-3">{it.unit}</td>
-            <td className="px-3 py-3 text-right tabular-nums">
-              {fmtNum(it.quantity)}
-            </td>
-            <td className="px-3 py-3 text-right tabular-nums">
-              {fmtMoney(it.unitPrice ?? it.unit_price)}
-            </td>
-            <td className="px-3 py-3 text-right tabular-nums rounded-r-xl font-medium text-gray-900">
-              {fmtMoney(it.totalPrice ?? it.total_price)}
+            <td className="px-3 py-3 text-right rounded-r-xl font-semibold text-gray-900">
+              {fmtMoney(totalGeral)}
             </td>
           </tr>
-        ))}
-        </tbody>
-
-        <tfoot>
-        <tr className="bg-white">
-          <td className="px-3 py-3 text-gray-600 rounded-l-xl" colSpan={5}>
-            Total dos itens
-          </td>
-          <td className="px-3 py-3 text-right rounded-r-xl font-semibold text-gray-900">
-            {fmtMoney(totalGeral)}
-          </td>
-        </tr>
-        </tfoot>
-      </table>
+          </tfoot>
+        </table>
+      </div>
     </section>
   );
 }
@@ -344,23 +589,16 @@ function ContractItemsTable({ items = [] }) {
 /* ===================== HELPERS ===================== */
 
 function prepareContractItems(items = []) {
-  // Filtra linhas inválidas (sem descrição / "total" / números todos nulos/zero)
   const validItems = (items || []).filter((raw) => {
     const desc = String(raw.description ?? "").trim();
-
-    // precisa ter alguma descrição
     if (!desc) return false;
 
-    // desc que contém "total" (ex: "VALOR TOTAL DO CONTRATO") são linhas de resumo
     if (/^total\b/i.test(desc) || /\btotal\b/i.test(desc)) return false;
 
     const q = num(raw.quantity);
     const vu = num(raw.unitPrice ?? raw.unit_price);
     const vt = num(raw.totalPrice ?? raw.total_price);
 
-    // *** NOVO ***
-    // Linha de "TOTAL DO CONTRATO":
-    // não tem quantidade nem valor unitário, só total_price.
     if ((q === null || q === 0) && (vu === null || vu === 0) && vt !== null) {
       return false;
     }
@@ -372,7 +610,6 @@ function prepareContractItems(items = []) {
     return true;
   });
 
-  // Ordena pelo item_no do banco quando existir
   const sortedItems = [...validItems].sort((a, b) => {
     const A = getItemNo(a);
     const B = getItemNo(b);
@@ -382,7 +619,6 @@ function prepareContractItems(items = []) {
     return A - B;
   });
 
-  // TOTAL = soma da coluna V. Total (já sem a linha de resumo)
   const totalGeral = sortedItems.reduce(
     (s, it) => s + (num(it.totalPrice ?? it.total_price) || 0),
     0
@@ -393,7 +629,6 @@ function prepareContractItems(items = []) {
 
 function normalizeDateForInput(value) {
   if (!value) return "";
-  // aceita 'YYYY-MM-DD', ISO ou Date
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
   const y = d.getFullYear();

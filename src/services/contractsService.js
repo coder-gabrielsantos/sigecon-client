@@ -26,3 +26,8 @@ export async function listContracts() {
   const res = await http.get("/contracts");
   return res.data;
 }
+
+export async function updateContractItem(contractId, payload) {
+  const res = await http.put(`/contracts/${contractId}/items`, payload);
+  return res.data;
+}
