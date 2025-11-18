@@ -1,158 +1,225 @@
-// pages/Orders/OrdersListPage.jsx
 import { useEffect, useMemo, useState } from "react";
-import { listContracts, getContractById } from "../../services/contractsService";
-import { createOrder, listOrders } from "../../services/ordersService";
+import { useNavigate } from "react-router-dom";
+import Select from "react-select";
+import {
+  listContractsSummary,
+  getContractById,
+} from "../../services/contractsService";
+import {
+  createOrder,
+  listOrders,
+} from "../../services/ordersService";
 
-function fmtMoney(v) {
-  const num = Number(v);
-  if (Number.isNaN(num)) return "R$ 0,00";
-  return num.toLocaleString("pt-BR", {
+function formatMoneyBRL(v) {
+  const n = Number(v || 0);
+  return n.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
     minimumFractionDigits: 2,
   });
 }
 
+const ORDER_TYPES = [
+  { value: "FORNECIMENTO", label: "Ordem de fornecimento" },
+  { value: "SERVICO", label: "Ordem de serviço" },
+  { value: "OUTRO", label: "Outro tipo de ordem" },
+];
+
 export default function OrdersListPage() {
+  const navigate = useNavigate();
+
   const [contracts, setContracts] = useState([]);
-  const [contractsLoading, setContractsLoading] = useState(false);
-  const [contractsError, setContractsError] = useState("");
-
-  const [selectedContractId, setSelectedContractId] = useState("");
-  const [selectedContract, setSelectedContract] = useState(null);
-  const [contractLoading, setContractLoading] = useState(false);
-
-  const [form, setForm] = useState({
-    orderType: "ORDEM DE FORNECIMENTO",
-    orderNumber: "",
-    issueDate: new Date().toISOString().slice(0, 10),
-    referencePeriod: "",
-    justification: "",
-  });
-
-  const [itemsQuantities, setItemsQuantities] = useState({}); // { contractItemId: quantity }
-
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState("");
-  const [createSuccess, setCreateSuccess] = useState("");
-
   const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [ordersError, setOrdersError] = useState("");
 
-  // Carrega contratos para o seletor
+  const [loadingContracts, setLoadingContracts] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  const [error, setError] = useState("");
+
+  // formulário
+  const [selectedContract, setSelectedContract] = useState(null);
+  const [orderType, setOrderType] = useState(ORDER_TYPES[0]);
+  const [issueDate, setIssueDate] = useState("");
+  const [justification, setJustification] = useState("");
+  const [contractItems, setContractItems] = useState([]);
+
+  // quantidade digitada por item da ordem (id -> string)
+  const [itemsQuantities, setItemsQuantities] = useState({});
+
+  // -------------------------
+  // Carregamento inicial
+  // -------------------------
   useEffect(() => {
     let alive = true;
-    (async () => {
+
+    async function loadContracts() {
       try {
-        setContractsLoading(true);
-        const data = await listContracts();
+        setLoadingContracts(true);
+        const data = await listContractsSummary();
         if (!alive) return;
-        setContracts(data || []);
+
+        const list = (data || []).map((api) => ({
+          id: api.id,
+          numero: api.number || api.numero || "Contrato",
+          fornecedor: api.supplier || api.fornecedor || "—",
+          totalAmount: Number(api.totalAmount ?? 0),
+          usedAmount: Number(api.usedAmount ?? 0),
+          remainingAmount: Number(
+            api.remainingAmount ??
+            Number(api.totalAmount ?? 0) - Number(api.usedAmount ?? 0)
+          ),
+        }));
+
+        setContracts(list);
       } catch (e) {
         console.error(e);
-        if (alive) setContractsError("Não foi possível carregar os contratos.");
+        if (alive) setError("Não foi possível carregar os contratos.");
       } finally {
-        if (alive) setContractsLoading(false);
+        if (alive) setLoadingContracts(false);
       }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+    }
 
-  // Carrega ordens existentes (resumo)
-  useEffect(() => {
-    let alive = true;
-    (async () => {
+    async function loadOrders() {
       try {
-        setOrdersLoading(true);
+        setLoadingOrders(true);
         const data = await listOrders();
         if (!alive) return;
-        setOrders(data || []);
+
+        setOrders(
+          (data || []).map((o) => ({
+            id: o.id,
+            numero: o.orderNumber || `Ordem #${o.id}`,
+            tipo: o.orderType,
+            contratoNumero: o.contractNumber,
+            fornecedor: o.contractSupplier,
+            data: o.issueDate
+              ? new Date(o.issueDate).toLocaleDateString("pt-BR")
+              : "—",
+            total: Number(o.totalAmount ?? 0),
+          }))
+        );
       } catch (e) {
         console.error(e);
-        if (alive) setOrdersError("Não foi possível carregar as ordens já emitidas.");
+        if (alive) setError("Não foi possível carregar as ordens.");
       } finally {
-        if (alive) setOrdersLoading(false);
+        if (alive) setLoadingOrders(false);
       }
-    })();
+    }
+
+    loadContracts();
+    loadOrders();
+
     return () => {
       alive = false;
     };
   }, []);
 
-  // Quando o usuário escolhe um contrato
-  async function handleSelectContract(e) {
-    const id = e.target.value;
-    setSelectedContractId(id);
-    setSelectedContract(null);
-    setItemsQuantities({});
-    setContractLoading(true);
+  // -------------------------
+  // Opções do react-select
+  // -------------------------
+  const contractOptions = useMemo(
+    () =>
+      contracts.map((c) => ({
+        value: c.id,
+        label: `${c.numero} · ${c.fornecedor} · saldo ${formatMoneyBRL(
+          c.remainingAmount
+        )}`,
+      })),
+    [contracts]
+  );
 
-    if (!id) {
-      setContractLoading(false);
-      return;
+  // -------------------------
+  // Quando seleciona contrato, busca itens
+  // -------------------------
+  useEffect(() => {
+    async function loadItems() {
+      if (!selectedContract) {
+        setContractItems([]);
+        setItemsQuantities({});
+        return;
+      }
+
+      try {
+        setItemsLoading(true);
+        setError("");
+        const data = await getContractById(selectedContract.value);
+
+        const items = (data.items || []).map((it) => ({
+          id: it.id,
+          itemNo: it.itemNo ?? it.item_no,
+          description: it.description,
+          unit: it.unit,
+          quantity: Number(it.quantity ?? 0),
+          unitPrice: Number(it.unitPrice ?? it.unit_price ?? 0),
+          totalPrice: Number(it.totalPrice ?? it.total_price ?? 0),
+        }));
+
+        setContractItems(items);
+        setItemsQuantities({});
+      } catch (e) {
+        console.error(e);
+        setError("Não foi possível carregar os itens do contrato.");
+      } finally {
+        setItemsLoading(false);
+      }
     }
 
-    try {
-      const data = await getContractById(id);
-      setSelectedContract(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setContractLoading(false);
-    }
-  }
+    loadItems();
+  }, [selectedContract]);
 
-  function handleFormChange(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function handleItemQuantityChange(itemId, value) {
-    const raw = value.replace(",", "."); // deixa o usuário escrever 1,5 etc.
+  // -------------------------
+  // Quantidade por item + total da ordem
+  // -------------------------
+  function handleItemQuantityChange(id, value) {
     setItemsQuantities((prev) => ({
       ...prev,
-      [itemId]: raw,
+      [id]: value,
     }));
   }
 
-  // Calcula total da ordem com base nas quantidades
   const orderTotal = useMemo(() => {
-    if (!selectedContract || !Array.isArray(selectedContract.items)) return 0;
     let total = 0;
-    for (const it of selectedContract.items) {
+    for (const it of contractItems) {
       const qStr = itemsQuantities[it.id];
       if (!qStr) continue;
-      const q = Number(qStr.toString().replace(/\./g, "").replace(",", "."));
-      if (!q || q <= 0) continue;
-      const unitPrice = Number(it.unitPrice ?? it.unit_price ?? 0);
-      total += q * unitPrice;
+
+      const numeric = Number(
+        qStr.toString().replace(/\./g, "").replace(",", ".")
+      );
+      if (!numeric || numeric <= 0) continue;
+
+      total += numeric * (it.unitPrice || 0);
     }
     return total;
-  }, [selectedContract, itemsQuantities]);
+  }, [contractItems, itemsQuantities]);
 
+  // -------------------------
+  // Emitir ordem
+  // -------------------------
   async function handleCreateOrder(e) {
     e.preventDefault();
-    if (!selectedContractId) {
-      setCreateError("Selecione um contrato para emitir a ordem.");
-      setCreateSuccess("");
+    setError("");
+
+    if (!selectedContract) {
+      setError("Selecione um contrato.");
       return;
     }
-
-    if (!selectedContract || !Array.isArray(selectedContract.items)) {
-      setCreateError("Contrato selecionado inválido.");
-      setCreateSuccess("");
+    if (!issueDate) {
+      setError("Informe a data de emissão.");
       return;
     }
 
     const itemsPayload = [];
-    for (const it of selectedContract.items) {
+    for (const it of contractItems) {
       const qStr = itemsQuantities[it.id];
       if (!qStr) continue;
 
-      const q = Number(qStr.toString().replace(/\./g, "").replace(",", "."));
-      if (!q || q <= 0) continue;
+      const numeric = Number(
+        qStr.toString().replace(/\./g, "").replace(",", ".")
+      );
+      if (!numeric || numeric <= 0) continue;
 
       itemsPayload.push({
         contractItemId: it.id,
@@ -161,363 +228,452 @@ export default function OrdersListPage() {
     }
 
     if (!itemsPayload.length) {
-      setCreateError("Informe a quantidade para pelo menos um item.");
-      setCreateSuccess("");
+      setError("Informe a quantidade para pelo menos um item.");
       return;
     }
 
-    setCreating(true);
-    setCreateError("");
-    setCreateSuccess("");
-
     try {
+      setCreating(true);
+
       const payload = {
-        contractId: selectedContractId,
-        orderType: form.orderType,
-        orderNumber: form.orderNumber || null,
-        issueDate: form.issueDate || null,
-        referencePeriod: form.referencePeriod || null,
-        justification: form.justification || null,
+        contractId: selectedContract.value,
+        orderType: orderType.value,
+        issueDate,
+        justification: justification.trim() || null,
         items: itemsPayload,
       };
 
-      const created = await createOrder(payload);
+      await createOrder(payload);
 
-      setCreateSuccess(
-        created.orderNumber
-          ? `Ordem ${created.orderNumber} criada com sucesso.`
-          : "Ordem criada com sucesso."
-      );
-      setCreateError("");
-
-      // limpa quantidades, mas mantém contrato selecionado
+      // limpa form
+      setJustification("");
+      setIssueDate("");
       setItemsQuantities({});
+      setOrderType(ORDER_TYPES[0]);
 
-      // recarrega lista de ordens
-      try {
-        setOrdersLoading(true);
-        const data = await listOrders();
-        setOrders(data || []);
-      } finally {
-        setOrdersLoading(false);
-      }
-    } catch (err) {
-      console.error(err);
-      const msg =
-        err.response?.data?.error ||
-        "Não foi possível criar a ordem. Verifique os dados e tente novamente.";
-      setCreateError(msg);
-      setCreateSuccess("");
+      // recarrega ordens e contratos (para atualizar saldo)
+      const [contractsNew, ordersNew] = await Promise.all([
+        listContractsSummary(),
+        listOrders(),
+      ]);
+
+      setContracts(
+        (contractsNew || []).map((api) => ({
+          id: api.id,
+          numero: api.number || api.numero || "Contrato",
+          fornecedor: api.supplier || api.fornecedor || "—",
+          totalAmount: Number(api.totalAmount ?? 0),
+          usedAmount: Number(api.usedAmount ?? 0),
+          remainingAmount: Number(
+            api.remainingAmount ??
+            Number(api.totalAmount ?? 0) - Number(api.usedAmount ?? 0)
+          ),
+        }))
+      );
+
+      setOrders(
+        (ordersNew || []).map((o) => ({
+          id: o.id,
+          numero: o.orderNumber || `Ordem #${o.id}`,
+          tipo: o.orderType,
+          contratoNumero: o.contractNumber,
+          fornecedor: o.contractSupplier,
+          data: o.issueDate
+            ? new Date(o.issueDate).toLocaleDateString("pt-BR")
+            : "—",
+          total: Number(o.totalAmount ?? 0),
+        }))
+      );
+    } catch (e) {
+      console.error(e);
+      setError(e?.response?.data?.error || "Erro ao emitir a ordem.");
     } finally {
       setCreating(false);
     }
   }
 
+  function handleResetForm() {
+    setSelectedContract(null);
+    setContractItems([]);
+    setItemsQuantities({});
+    setJustification("");
+    setIssueDate("");
+    setOrderType(ORDER_TYPES[0]);
+    setError("");
+  }
+
+  // -------------------------
+  // Estilo do react-select
+  // -------------------------
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: 40,
+      borderRadius: 9999,
+      borderColor: "#d1d5db",
+      boxShadow: "none",
+      "&:hover": { borderColor: "#4f46e5" },
+      fontSize: "0.875rem", // text-sm
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      padding: "2px 12px",
+    }),
+    input: (base) => ({
+      ...base,
+      margin: 0,
+      padding: 0,
+    }),
+    indicatorsContainer: (base) => ({
+      ...base,
+      height: 40,
+    }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: 12,
+      zIndex: 30,
+      fontSize: "0.875rem",
+    }),
+  };
+
+  const smallButtonClasses =
+    "inline-flex items-center justify-center rounded-full px-3 py-1.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-1";
+
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
-      {/* Cabeçalho */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">
-            Emissão de ordens
-          </h1>
-          <p className="text-xs text-gray-500">
-            Selecione um contrato, escolha os itens e gere a ordem (fornecimento, serviço, etc.).
-          </p>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* CABEÇALHO */}
+      <header className="space-y-1">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+          Ordens vinculadas a contratos
+        </h1>
+        <p className="text-sm text-gray-600">
+          Emita ordens de fornecimento ou serviço a partir de um contrato já
+          cadastrado. O valor é debitado automaticamente do saldo do contrato.
+        </p>
+      </header>
 
-      {/* Seletor de contrato + formulário da ordem */}
-      <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4">
-        {/* Seleção de contrato */}
-        <div className="space-y-2">
-          <label className="block text-[11px] font-medium text-gray-600 mb-1">
-            Contrato
-          </label>
-          <select
-            className="w-full max-w-md rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={selectedContractId}
-            onChange={handleSelectContract}
+      {/* ALERTA DE ERRO */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* CARD DE EMISSÃO */}
+      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-5">
+        {/* TÍTULO + BOTÃO LIMPAR */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900">
+              Emitir nova ordem
+            </p>
+            <p className="text-xs text-gray-500">
+              Escolha o contrato, o tipo de ordem, os itens e a finalidade.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleResetForm}
+            className={`${smallButtonClasses} border border-gray-300 text-gray-700 bg-white hover:bg-gray-50`}
           >
-            <option value="">Selecione um contrato</option>
-            {contracts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.number || c.numero} — {c.supplier || c.fornecedor}
-              </option>
-            ))}
-          </select>
-          {contractsLoading && (
-            <p className="text-xs text-gray-500">Carregando contratos...</p>
-          )}
-          {contractsError && (
-            <p className="text-xs text-red-600">{contractsError}</p>
-          )}
+            Limpar formulário
+          </button>
         </div>
 
-        {/* Formulário da ordem */}
-        <form onSubmit={handleCreateOrder} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">
+        <form className="space-y-5" onSubmit={handleCreateOrder}>
+          {/* LINHA 1: contrato / tipo / data */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">
+                Contrato vinculado
+              </label>
+              <Select
+                options={contractOptions}
+                value={selectedContract}
+                onChange={setSelectedContract}
+                isLoading={loadingContracts}
+                placeholder="Selecione um contrato..."
+                classNamePrefix="react-select"
+                styles={selectStyles}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">
                 Tipo de ordem
               </label>
-              <select
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={form.orderType}
-                onChange={(e) => handleFormChange("orderType", e.target.value)}
+              <Select
+                options={ORDER_TYPES}
+                value={orderType}
+                onChange={setOrderType}
+                classNamePrefix="react-select"
+                styles={selectStyles}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label
+                htmlFor="issueDate"
+                className="text-xs font-medium text-gray-700"
               >
-                <option value="ORDEM DE FORNECIMENTO">
-                  Ordem de fornecimento
-                </option>
-                <option value="ORDEM DE SERVIÇO">Ordem de serviço</option>
-                <option value="ORDEM">Outro (genérico)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                Número da ordem
+                Data da emissão
               </label>
               <input
-                type="text"
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Ex: OF 001/2025"
-                value={form.orderNumber}
-                onChange={(e) =>
-                  handleFormChange("orderNumber", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                Data de emissão
-              </label>
-              <input
+                id="issueDate"
                 type="date"
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={form.issueDate}
-                onChange={(e) =>
-                  handleFormChange("issueDate", e.target.value)
-                }
+                className="w-full rounded-full border border-gray-300 px-3 text-sm h-10 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={issueDate}
+                onChange={(e) => setIssueDate(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                Período de referência
-              </label>
-              <input
-                type="text"
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Ex: Janeiro/2025"
-                value={form.referencePeriod}
-                onChange={(e) =>
-                  handleFormChange("referencePeriod", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                Finalidade / Justificativa
-              </label>
-              <textarea
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[60px]"
-                placeholder="Descreva a finalidade da ordem..."
-                value={form.justification}
-                onChange={(e) =>
-                  handleFormChange("justification", e.target.value)
-                }
-              />
-            </div>
+          {/* FINALIDADE */}
+          <div className="space-y-1">
+            <label
+              htmlFor="justification"
+              className="text-xs font-medium text-gray-700"
+            >
+              Finalidade / Justificativa
+            </label>
+            <input
+              id="justification"
+              type="text"
+              className="w-full rounded-full border border-gray-300 px-3 text-sm h-10 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Descreva a finalidade da ordem (ex.: aquisição de materiais de construção...)"
+              value={justification}
+              onChange={(e) => setJustification(e.target.value)}
+            />
+            <p className="text-[11px] text-gray-400">
+              Campo em linha única, sem aumento de altura.
+            </p>
           </div>
 
-          {/* Tabela de itens do contrato */}
-          <div className="pt-2 space-y-2">
+          {/* ITENS DO CONTRATO */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-gray-900">
-                Itens do contrato
+                Itens deste contrato
               </p>
               <p className="text-xs text-gray-500">
-                Informe a quantidade para os itens que farão parte da ordem.
+                Informe a quantidade para cada item que fará parte da ordem.
               </p>
             </div>
 
-            {contractLoading ? (
-              <p className="text-xs text-gray-500">
-                Carregando itens do contrato...
-              </p>
-            ) : !selectedContract ? (
-              <p className="text-xs text-gray-500">
+            {!selectedContract && (
+              <p className="text-sm text-gray-500">
                 Selecione um contrato para visualizar os itens.
               </p>
-            ) : !selectedContract.items ||
-            selectedContract.items.length === 0 ? (
-              <p className="text-xs text-gray-500">
-                Este contrato não possui itens cadastrados.
-              </p>
-            ) : (
-              <div className="w-full overflow-x-auto rounded-xl border border-gray-200 bg-gray-50">
-                <table className="min-w-full text-xs sm:text-sm border-separate border-spacing-y-1">
-                  <thead>
-                  <tr className="bg-gray-100 text-[11px] text-gray-600 uppercase tracking-wide">
-                    <th className="px-3 py-2 text-left">Item</th>
-                    <th className="px-3 py-2 text-left">Descrição</th>
-                    <th className="px-3 py-2 text-left">Unid.</th>
-                    <th className="px-3 py-2 text-right">Qtd contrato</th>
-                    <th className="px-3 py-2 text-right">Qtd p/ ordem</th>
-                    <th className="px-3 py-2 text-right">V. Unit.</th>
-                    <th className="px-3 py-2 text-right">V. Total (ordem)</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {selectedContract.items.map((it, idx) => {
-                    const qStr = itemsQuantities[it.id] || "";
-                    const qNum = Number(
-                      qStr.toString().replace(/\./g, "").replace(",", ".")
-                    );
-                    const unitPrice = Number(
-                      it.unitPrice ?? it.unit_price ?? 0
-                    );
-                    const totalLine =
-                      !qNum || qNum <= 0 ? 0 : qNum * unitPrice;
-
-                    return (
-                      <tr
-                        key={it.id ?? `${idx}-${it.itemNo ?? it.item_no ?? ""}`}
-                        className="bg-white"
-                      >
-                        <td className="px-3 py-2 text-gray-700">
-                          {it.itemNo ?? it.item_no ?? idx + 1}
-                        </td>
-                        <td className="px-3 py-2 text-gray-800 max-w-[260px] whitespace-nowrap overflow-hidden text-ellipsis">
-                          {it.description}
-                        </td>
-                        <td className="px-3 py-2 text-gray-700">
-                          {it.unit}
-                        </td>
-                        <td className="px-3 py-2 text-right text-gray-700">
-                          {it.quantity}
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <input
-                            type="text"
-                            className="w-24 text-right rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            placeholder="0"
-                            value={qStr}
-                            onChange={(e) =>
-                              handleItemQuantityChange(it.id, e.target.value)
-                            }
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-right text-gray-700 tabular-nums">
-                          {fmtMoney(unitPrice)}
-                        </td>
-                        <td className="px-3 py-2 text-right text-gray-900 font-medium tabular-nums">
-                          {fmtMoney(totalLine)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  </tbody>
-                  <tfoot>
-                  <tr className="bg-white">
-                    <td
-                      className="px-3 py-3 text-gray-600 font-medium"
-                      colSpan={6}
-                    >
-                      Total da ordem
-                    </td>
-                    <td className="px-3 py-3 text-right text-gray-900 font-semibold">
-                      {fmtMoney(orderTotal)}
-                    </td>
-                  </tr>
-                  </tfoot>
-                </table>
-              </div>
             )}
-          </div>
 
-          {/* Feedback e botão */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-            <div className="space-y-1">
-              {createError && (
-                <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {createError}
+            {selectedContract && itemsLoading && (
+              <p className="text-sm text-gray-500">
+                Carregando itens do contrato...
+              </p>
+            )}
+
+            {selectedContract &&
+              !itemsLoading &&
+              contractItems.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  Nenhum item cadastrado neste contrato.
                 </p>
               )}
-              {createSuccess && (
-                <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-                  {createSuccess}
+
+            {selectedContract &&
+              !itemsLoading &&
+              contractItems.length > 0 && (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 max-h-72 overflow-y-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                    <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide">
+                      <th className="px-3 py-2 text-left">Item</th>
+                      <th className="px-3 py-2 text-left">Descrição</th>
+                      <th className="px-3 py-2 text-right">Qtd contrato</th>
+                      <th className="px-3 py-2 text-right">
+                        Qtd p/ ordem
+                      </th>
+                      <th className="px-3 py-2 text-right">V. unit.</th>
+                      <th className="px-3 py-2 text-right">
+                        V. total (ordem)
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {contractItems.map((it) => {
+                      const qStr = itemsQuantities[it.id] || "";
+                      const numeric = Number(
+                        qStr
+                          .toString()
+                          .replace(/\./g, "")
+                          .replace(",", ".")
+                      );
+                      const lineTotal =
+                        !numeric || numeric <= 0
+                          ? 0
+                          : numeric * (it.unitPrice || 0);
+
+                      return (
+                        <tr
+                          key={it.id}
+                          className="border-t border-gray-200 bg-white"
+                        >
+                          <td className="px-3 py-2 whitespace-nowrap text-gray-700">
+                            {it.itemNo ?? "-"}
+                          </td>
+                          <td className="px-3 py-2 text-gray-800">
+                            {it.description}
+                          </td>
+                          <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
+                            {it.quantity}
+                          </td>
+                          <td className="px-3 py-2 text-right whitespace-nowrap">
+                            <input
+                              type="text"
+                              className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm text-right text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              placeholder="0"
+                              value={qStr}
+                              onChange={(e) =>
+                                handleItemQuantityChange(
+                                  it.id,
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
+                            {formatMoneyBRL(it.unitPrice)}
+                          </td>
+                          <td className="px-3 py-2 text-right text-gray-900 font-medium whitespace-nowrap">
+                            {formatMoneyBRL(lineTotal)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+          </div>
+
+          {/* TOTAL + BOTÃO EMITIR */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-100">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Total da ordem
+              </p>
+              <p className="text-lg font-semibold text-gray-900">
+                {formatMoneyBRL(orderTotal)}
+              </p>
+              {selectedContract && (
+                <p className="text-xs text-gray-500">
+                  Este valor será debitado do saldo do contrato selecionado.
                 </p>
               )}
             </div>
 
             <button
               type="submit"
-              disabled={creating}
-              className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={creating || !selectedContract}
+              className={`${smallButtonClasses} bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed`}
             >
-              {creating ? "Gerando ordem..." : "Gerar ordem"}
+              {creating ? "Emitindo..." : "Emitir ordem"}
             </button>
           </div>
         </form>
       </section>
 
-      {/* Lista de ordens já emitidas (simples) */}
-      <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-gray-900">
-            Ordens já emitidas
-          </p>
+      {/* LISTA DE ORDENS */}
+      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900">
+              Ordens emitidas
+            </p>
+            <p className="text-xs text-gray-500">
+              Histórico das ordens geradas a partir dos contratos.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={async () => {
+              setLoadingOrders(true);
+              try {
+                const data = await listOrders();
+                setOrders(
+                  (data || []).map((o) => ({
+                    id: o.id,
+                    numero: o.orderNumber || `Ordem #${o.id}`,
+                    tipo: o.orderType,
+                    contratoNumero: o.contractNumber,
+                    fornecedor: o.contractSupplier,
+                    data: o.issueDate
+                      ? new Date(o.issueDate).toLocaleDateString("pt-BR")
+                      : "—",
+                    total: Number(o.totalAmount ?? 0),
+                  }))
+                );
+              } finally {
+                setLoadingOrders(false);
+              }
+            }}
+            className={`${smallButtonClasses} border border-gray-300 text-gray-700 bg-white hover:bg-gray-50`}
+          >
+            {loadingOrders ? "Atualizando..." : "Atualizar"}
+          </button>
         </div>
 
-        {ordersLoading ? (
-          <p className="text-xs text-gray-500">Carregando ordens...</p>
-        ) : ordersError ? (
-          <p className="text-xs text-red-600">{ordersError}</p>
-        ) : !orders.length ? (
-          <p className="text-xs text-gray-500">
+        {loadingOrders ? (
+          <div className="px-4 py-4 text-sm text-gray-500">
+            Carregando ordens...
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="px-4 py-4 text-sm text-gray-500">
             Nenhuma ordem emitida até o momento.
-          </p>
+          </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="min-w-full text-xs sm:text-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
               <thead>
-              <tr className="bg-gray-100 text-[11px] text-gray-600 uppercase tracking-wide">
-                <th className="px-3 py-2 text-left">Nº ordem</th>
-                <th className="px-3 py-2 text-left">Tipo</th>
-                <th className="px-3 py-2 text-left">Contrato</th>
-                <th className="px-3 py-2 text-left">Fornecedor</th>
-                <th className="px-3 py-2 text-right">Data</th>
-                <th className="px-3 py-2 text-right">Total</th>
+              <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide">
+                <th className="px-3 py-2 text-left font-medium">Nº</th>
+                <th className="px-3 py-2 text-left font-medium">Tipo</th>
+                <th className="px-3 py-2 text-left font-medium">Contrato</th>
+                <th className="px-3 py-2 text-left font-medium">
+                  Fornecedor
+                </th>
+                <th className="px-3 py-2 text-left font-medium">Data</th>
+                <th className="px-3 py-2 text-right font-medium">
+                  Valor total
+                </th>
               </tr>
               </thead>
               <tbody>
               {orders.map((o) => (
-                <tr key={o.id} className="border-t border-gray-100">
-                  <td className="px-3 py-2 text-gray-900">
-                    {o.orderNumber || `Ordem #${o.id}`}
+                <tr
+                  key={o.id}
+                  className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => navigate(`/orders/${o.id}`)}
+                >
+                  <td className="px-3 py-2 font-semibold text-gray-900 whitespace-nowrap">
+                    {o.numero}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">
-                    {o.orderType}
+                  <td className="px-3 py-2 text-gray-800 whitespace-nowrap">
+                    {o.tipo}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">
-                    {o.contractNumber}
+                  <td className="px-3 py-2 text-gray-800 whitespace-nowrap">
+                    {o.contratoNumero}
                   </td>
-                  <td className="px-3 py-2 text-gray-700">
-                    {o.supplier}
+                  <td className="px-3 py-2 text-gray-800 whitespace-nowrap">
+                    {o.fornecedor}
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-700">
-                    {o.issueDate
-                      ? new Date(o.issueDate).toLocaleDateString("pt-BR")
-                      : "—"}
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                    {o.data}
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-900 font-medium">
-                    {fmtMoney(o.totalAmount)}
+                  <td className="px-3 py-2 text-right font-medium text-gray-900 whitespace-nowrap">
+                    {formatMoneyBRL(o.total)}
                   </td>
                 </tr>
               ))}

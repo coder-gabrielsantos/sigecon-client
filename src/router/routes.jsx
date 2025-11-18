@@ -4,6 +4,7 @@ import DashboardLayout from "../layouts/DashboardLayout.jsx";
 import ContractsListPage from "../pages/Contracts/ContractsListPage.jsx";
 import ContractDetailPage from "../pages/Contracts/ContractDetailPage.jsx";
 import OrdersListPage from "../pages/Orders/OrdersListPage.jsx";
+import OrderDetailPage from "../pages/Orders/OrderDetailPage.jsx";
 import UserPage from "../pages/User/UserPage.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
           {
             path: "orders",
             element: <OrdersListPage/>,
+          },
+          {
+            path: "orders/:id",
+            element: <OrderDetailPage />,
           },
           {
             path: "user",
