@@ -151,7 +151,10 @@ export default function OrdersListPage() {
           itemNo: it.itemNo ?? it.item_no,
           description: it.description,
           unit: it.unit,
-          quantity: Number(it.quantity ?? 0),
+          contractQuantity: Number(it.quantity ?? 0), // total contratado
+          availableQuantity: Number(
+            it.availableQuantity ?? it.available_quantity ?? it.quantity ?? 0
+          ),
           unitPrice: Number(it.unitPrice ?? it.unit_price ?? 0),
           totalPrice: Number(it.totalPrice ?? it.total_price ?? 0),
         }));
@@ -284,6 +287,31 @@ export default function OrdersListPage() {
           total: Number(o.totalAmount ?? 0),
         }))
       );
+
+      // recarrega itens do contrato selecionado para atualizar a quantidade disponível
+      if (selectedContract) {
+        try {
+          const updatedContract = await getContractById(selectedContract.value);
+
+          const updatedItems = (updatedContract.items || []).map((it) => ({
+            id: it.id,
+            itemNo: it.itemNo ?? it.item_no,
+            description: it.description,
+            unit: it.unit,
+            contractQuantity: Number(it.quantity ?? 0),
+            availableQuantity: Number(
+              it.availableQuantity ?? it.available_quantity ?? it.quantity ?? 0
+            ),
+            unitPrice: Number(it.unitPrice ?? it.unit_price ?? 0),
+            totalPrice: Number(it.totalPrice ?? it.total_price ?? 0),
+          }));
+
+          setContractItems(updatedItems);
+          setItemsQuantities({});
+        } catch (e) {
+          console.error("Erro ao recarregar itens do contrato", e);
+        }
+      }
     } catch (e) {
       console.error(e);
       setError(e?.response?.data?.error || "Erro ao emitir a ordem.");
@@ -490,7 +518,7 @@ export default function OrdersListPage() {
                     <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide">
                       <th className="px-3 py-2 text-left">Item</th>
                       <th className="px-3 py-2 text-left">Descrição</th>
-                      <th className="px-3 py-2 text-right">Qtd contrato</th>
+                      <th className="px-3 py-2 text-right">Qtd disponível</th>
                       <th className="px-3 py-2 text-right">
                         Qtd p/ ordem
                       </th>
@@ -526,7 +554,7 @@ export default function OrdersListPage() {
                             {it.description}
                           </td>
                           <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
-                            {it.quantity}
+                            {it.availableQuantity}
                           </td>
                           <td className="px-3 py-2 text-right whitespace-nowrap">
                             <input
