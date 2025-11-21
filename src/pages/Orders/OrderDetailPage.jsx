@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
-import { getOrderById } from "../../services/ordersService";
+import { getOrderById, downloadOrderPdf } from "../../services/ordersService";
 import { getContractById } from "../../services/contractsService";
 
 function formatMoneyBRL(v) {
@@ -74,6 +74,24 @@ export default function OrderDetailPage() {
     };
   }, [id]);
 
+  async function handleDownloadPdf() {
+    try {
+      const blob = await downloadOrderPdf(order.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ordem-${order.orderNumber || order.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      // eslint-disable-next-line no-alert
+      alert("Não foi possível gerar o PDF da ordem.");
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
@@ -124,12 +142,7 @@ export default function OrderDetailPage() {
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <Button
             type="button"
-            onClick={() => {
-              // futura integração com geração de PDF
-              // por enquanto, apenas um placeholder
-              // eslint-disable-next-line no-alert
-              alert("Em breve: geração do PDF da ordem.");
-            }}
+            onClick={handleDownloadPdf}
           >
             Baixar PDF
           </Button>
