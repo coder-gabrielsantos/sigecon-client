@@ -28,10 +28,9 @@ export async function getOrderById(id) {
   return res.data;
 }
 
-export async function downloadOrderPdf(id) {
-  const response = await http.get(`/orders/${id}/pdf`, {
+export async function downloadOrderXlsx(id) {
+  const response = await http.get(`/orders/${id}/xlsx`, {
     responseType: "blob",
   });
-
-  return response.data; // blob do PDF
+  return response.data; // Blob
 }

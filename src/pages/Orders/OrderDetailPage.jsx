@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../components/ui/Button";
-import { getOrderById, downloadOrderPdf } from "../../services/ordersService";
+import { getOrderById, downloadOrderXlsx } from "../../services/ordersService";
 import { getContractById } from "../../services/contractsService";
 
 function formatMoneyBRL(v) {
@@ -74,21 +74,23 @@ export default function OrderDetailPage() {
     };
   }, [id]);
 
-  async function handleDownloadPdf() {
+  async function handleDownloadXlsx() {
     try {
-      const blob = await downloadOrderPdf(order.id);
+      const blob = await downloadOrderXlsx(id);
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
+      const numero = order.orderNumber || order.id;
       a.href = url;
-      a.download = `ordem-${order.orderNumber || order.id}.pdf`;
+      a.download = `ordem_${numero}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      // eslint-disable-next-line no-alert
-      alert("Não foi possível gerar o PDF da ordem.");
+    } catch (e) {
+      console.error(e);
+      // você pode trocar por toast depois
+      alert("Não foi possível baixar a ordem em XLSX.");
     }
   }
 
@@ -142,9 +144,9 @@ export default function OrderDetailPage() {
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <Button
             type="button"
-            onClick={handleDownloadPdf}
+            onClick={handleDownloadXlsx}
           >
-            Baixar PDF
+            Baixar planilha
           </Button>
         </div>
       </header>
