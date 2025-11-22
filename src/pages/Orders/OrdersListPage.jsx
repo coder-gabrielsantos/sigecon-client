@@ -123,9 +123,7 @@ export default function OrdersListPage() {
     () =>
       contracts.map((c) => ({
         value: c.id,
-        label: `${c.numero} · ${c.fornecedor} · saldo ${formatMoneyBRL(
-          c.remainingAmount
-        )}`,
+        label: c.numero, // apenas o nome/numero do contrato
       })),
     [contracts]
   );
@@ -176,9 +174,37 @@ export default function OrdersListPage() {
   // Quantidade por item + total da ordem
   // -------------------------
   function handleItemQuantityChange(id, value) {
+    // permite apagar o campo
+    if (value === "") {
+      setItemsQuantities((prev) => ({
+        ...prev,
+        [id]: "",
+      }));
+      return;
+    }
+
+    // normaliza para número (remove pontos, troca vírgula por ponto)
+    const numeric = Number(
+      value.toString().replace(/\./g, "").replace(",", ".")
+    );
+
+    const item = contractItems.find((it) => it.id === id);
+    const available = item?.availableQuantity ?? null;
+
+    let finalQty = numeric;
+
+    // se não for número válido ou menor/igual a zero, zera
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      finalQty = "";
+    }
+    // se passar da quantidade disponível, usa a disponível
+    else if (available != null && numeric > available) {
+      finalQty = available;
+    }
+
     setItemsQuantities((prev) => ({
       ...prev,
-      [id]: value,
+      [id]: finalQty === "" ? "" : String(Math.floor(finalQty)),
     }));
   }
 
@@ -320,16 +346,6 @@ export default function OrdersListPage() {
     }
   }
 
-  function handleResetForm() {
-    setSelectedContract(null);
-    setContractItems([]);
-    setItemsQuantities({});
-    setJustification("");
-    setIssueDate("");
-    setOrderType(ORDER_TYPES[0]);
-    setError("");
-  }
-
   // -------------------------
   // Estilo do react-select
   // -------------------------
@@ -358,7 +374,7 @@ export default function OrdersListPage() {
     }),
     menu: (base) => ({
       ...base,
-      borderRadius: 12,
+      borderRadius: 0,
       zIndex: 30,
       fontSize: "0.875rem",
     }),
@@ -399,14 +415,6 @@ export default function OrdersListPage() {
               Escolha o contrato, o tipo de ordem, os itens e a finalidade.
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={handleResetForm}
-            className={`${smallButtonClasses} border border-gray-300 text-gray-700 bg-white hover:bg-gray-50`}
-          >
-            Limpar formulário
-          </button>
         </div>
 
         <form className="space-y-5" onSubmit={handleCreateOrder}>
@@ -512,73 +520,71 @@ export default function OrdersListPage() {
             {selectedContract &&
               !itemsLoading &&
               contractItems.length > 0 && (
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 max-h-72 overflow-y-auto">
-                  <table className="min-w-full text-sm">
+                <div className="border border-gray-200 bg-gray-50 max-h-72 overflow-y-auto overflow-x-auto">
+                  <table className="min-w-[900px] text-sm">
                     <thead>
-                    <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide">
+                    <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide sticky top-0 z-10">
                       <th className="px-3 py-2 text-left">Item</th>
                       <th className="px-3 py-2 text-left">Descrição</th>
-                      <th className="px-3 py-2 text-right">Qtd disponível</th>
-                      <th className="px-3 py-2 text-right">
+                      <th className="px-2 py-2 text-right w-20 whitespace-nowrap">
+                        Qtd disponível
+                      </th>
+                      <th className="px-2 py-2 text-right w-24 whitespace-nowrap">
                         Qtd p/ ordem
                       </th>
                       <th className="px-3 py-2 text-right">V. unit.</th>
-                      <th className="px-3 py-2 text-right">
+                      <th className="px-4 py-2 text-right min-w-[140px]">
                         V. total (ordem)
                       </th>
                     </tr>
                     </thead>
                     <tbody>
-                    {contractItems.map((it) => {
-                      const qStr = itemsQuantities[it.id] || "";
-                      const numeric = Number(
-                        qStr
-                          .toString()
-                          .replace(/\./g, "")
-                          .replace(",", ".")
-                      );
-                      const lineTotal =
-                        !numeric || numeric <= 0
-                          ? 0
-                          : numeric * (it.unitPrice || 0);
+                    {contractItems
+                      .filter((it) => (it.description || "").trim() !== "")
+                      .map((it) => {
+                        const qStr = itemsQuantities[it.id] || "";
+                        const numeric = Number(
+                          qStr.toString().replace(/\./g, "").replace(",", ".")
+                        );
+                        const lineTotal =
+                          !numeric || numeric <= 0
+                            ? 0
+                            : numeric * (it.unitPrice || 0);
 
-                      return (
-                        <tr
-                          key={it.id}
-                          className="border-t border-gray-200 bg-white"
-                        >
-                          <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                            {it.itemNo ?? "-"}
-                          </td>
-                          <td className="px-3 py-2 text-gray-800">
-                            {it.description}
-                          </td>
-                          <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
-                            {it.availableQuantity}
-                          </td>
-                          <td className="px-3 py-2 text-right whitespace-nowrap">
-                            <input
-                              type="text"
-                              className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm text-right text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                              placeholder="0"
-                              value={qStr}
-                              onChange={(e) =>
-                                handleItemQuantityChange(
-                                  it.id,
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
-                            {formatMoneyBRL(it.unitPrice)}
-                          </td>
-                          <td className="px-3 py-2 text-right text-gray-900 font-medium whitespace-nowrap">
-                            {formatMoneyBRL(lineTotal)}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        return (
+                          <tr
+                            key={it.id}
+                            className="border-t border-gray-200 bg-white"
+                          >
+                            <td className="px-3 py-2 whitespace-nowrap text-gray-700">
+                              {it.itemNo ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 text-gray-800">
+                              {it.description}
+                            </td>
+                            <td className="px-2 py-2 text-right text-gray-700 whitespace-nowrap w-20">
+                              {it.availableQuantity}
+                            </td>
+                            <td className="px-2 py-2 text-right whitespace-nowrap w-24">
+                              <input
+                                type="text"
+                                className="w-full rounded-lg border border-gray-300 px-2 py-1 text-sm text-right text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                placeholder="0"
+                                value={qStr}
+                                onChange={(e) =>
+                                  handleItemQuantityChange(it.id, e.target.value)
+                                }
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
+                              {formatMoneyBRL(it.unitPrice)}
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-900 font-medium whitespace-nowrap">
+                              {formatMoneyBRL(lineTotal)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
