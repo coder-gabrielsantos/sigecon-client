@@ -28,9 +28,26 @@ export async function getOrderById(id) {
   return res.data;
 }
 
-export async function downloadOrderXlsx(id) {
-  const response = await http.get(`/orders/${id}/xlsx`, {
+/**
+ * Baixa a planilha XLSX da ordem já preenchida com base no template.
+ * Envia junto os dados extras preenchidos no formulário da tela.
+ *
+ * extras:
+ * {
+ *   orderTypeText,
+ *   deText,
+ *   paraText,
+ *   nomeRazao,
+ *   endereco,
+ *   celularTexto,
+ *   justificativaCampo,
+ *   tiposDespesaSelecionados: string[],
+ *   modalidadesSelecionadas: string[]
+ * }
+ */
+export async function downloadOrderXlsx(id, extras) {
+  const res = await http.post(`/orders/${id}/xlsx`, extras, {
     responseType: "blob",
   });
-  return response.data; // Blob
+  return res.data; // Blob do XLSX
 }
