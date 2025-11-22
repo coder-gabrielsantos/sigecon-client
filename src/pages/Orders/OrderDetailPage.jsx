@@ -55,9 +55,7 @@ export default function OrderDetailPage() {
     // Justificativa (44 CDEFGHI)
     justificativaCampo: "",
     // Seleções de tipos de despesa (11/12/13 HI)
-    tiposDespesaSelecionados: [
-      "SERVIÇOS / OBRAS DE ENGENHARIA",
-    ],
+    tiposDespesaSelecionados: ["SERVIÇOS / OBRAS DE ENGENHARIA"],
     // Seleções de modalidade (17/18/19/20/21 HI)
     modalidadesSelecionadas: ["PREGÃO ELETRÔNICO Nº 001/2024."],
   });
@@ -99,14 +97,12 @@ export default function OrderDetailPage() {
         setXlsxExtras((prev) => {
           const justificativaBase =
             formattedOrder.justification || prev.justificativaCampo || "";
-          const periodo =
-            formattedOrder.referencePeriod
-              ? ` Período de Referência: ${formattedOrder.referencePeriod}.`
-              : "";
+          const periodo = formattedOrder.referencePeriod
+            ? ` Período de Referência: ${formattedOrder.referencePeriod}.`
+            : "";
           return {
             ...prev,
-            orderTypeText:
-              formattedOrder.orderType || prev.orderTypeText,
+            orderTypeText: formattedOrder.orderType || prev.orderTypeText,
             justificativaCampo: justificativaBase + periodo,
           };
         });
@@ -187,7 +183,6 @@ export default function OrderDetailPage() {
       window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error(e);
-      // pode trocar por toast depois
       alert("Não foi possível baixar a ordem em XLSX.");
     }
   }
@@ -253,42 +248,22 @@ export default function OrderDetailPage() {
             Dados para geração da planilha
           </h2>
           <p className="text-xs text-gray-500">
-            Esses campos serão escritos diretamente nas células do modelo
-            XLSX antes do download. Você pode ajustar os textos conforme
-            precisar.
+            Esses campos serão escritos diretamente nas células do modelo XLSX
+            antes do download. Você pode ajustar os textos conforme precisar.
           </p>
         </div>
 
-        {/* Tipo / data */}
-        <div className="grid gap-4 sm:grid-cols-[2fr,1fr]">
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-700">
-              Tipo de ordem (célula 4 E–I)
-            </label>
-            <input
-              type="text"
-              value={xlsxExtras.orderTypeText}
-              onChange={(e) =>
-                handleChange("orderTypeText", e.target.value)
-              }
-              className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-700">
-              Data (célula 5 I)
-            </label>
-            <input
-              type="text"
-              value={
-                order.issueDate
-                  ? order.issueDate
-                  : ""
-              }
-              disabled
-              className="block w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-500"
-            />
-          </div>
+        {/* Tipo de ordem */}
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-gray-700">
+            Tipo de ordem
+          </label>
+          <input
+            type="text"
+            value={xlsxExtras.orderTypeText}
+            onChange={(e) => handleChange("orderTypeText", e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          />
         </div>
 
         {/* De / Para */}
@@ -337,9 +312,7 @@ export default function OrderDetailPage() {
             <input
               type="text"
               value={xlsxExtras.celularTexto}
-              onChange={(e) =>
-                handleChange("celularTexto", e.target.value)
-              }
+              onChange={(e) => handleChange("celularTexto", e.target.value)}
               className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
@@ -349,8 +322,8 @@ export default function OrderDetailPage() {
           <label className="block text-xs font-medium text-gray-700">
             Endereço (células 20/21 CD)
           </label>
-          <textarea
-            rows={2}
+          <input
+            type="text"
             value={xlsxExtras.endereco}
             onChange={(e) => handleChange("endereco", e.target.value)}
             className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -372,9 +345,7 @@ export default function OrderDetailPage() {
                   <input
                     type="checkbox"
                     className="h-3 w-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    checked={xlsxExtras.tiposDespesaSelecionados.includes(
-                      opt
-                    )}
+                    checked={xlsxExtras.tiposDespesaSelecionados.includes(opt)}
                     onChange={() => toggleExpenseSelection(opt)}
                   />
                   <span>{opt}</span>
@@ -396,9 +367,7 @@ export default function OrderDetailPage() {
                   <input
                     type="checkbox"
                     className="h-3 w-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    checked={xlsxExtras.modalidadesSelecionadas.includes(
-                      opt
-                    )}
+                    checked={xlsxExtras.modalidadesSelecionadas.includes(opt)}
                     onChange={() => toggleModalitySelection(opt)}
                   />
                   <span>{opt}</span>
@@ -411,8 +380,8 @@ export default function OrderDetailPage() {
         {/* Justificativa */}
         <div className="space-y-1">
           <label className="block text-xs font-medium text-gray-700">
-            Justificativa / Finalidade / Período de Referência
-            (célula 44 CDEFGHI)
+            Justificativa / Finalidade / Período de Referência (célula 44
+            CDEFGHI)
           </label>
           <textarea
             rows={3}
@@ -484,18 +453,12 @@ export default function OrderDetailPage() {
             <table className="min-w-full text-xs">
               <thead>
               <tr className="bg-gray-100 text-[11px] text-gray-600 uppercase tracking-wide">
-                <th className="px-3 py-2 text-left font-medium">
-                  Item
-                </th>
+                <th className="px-3 py-2 text-left font-medium">Item</th>
                 <th className="px-3 py-2 text-left font-medium">
                   Descrição
                 </th>
-                <th className="px-3 py-2 text-left font-medium">
-                  Unid.
-                </th>
-                <th className="px-3 py-2 text-right font-medium">
-                  Quant.
-                </th>
+                <th className="px-3 py-2 text-left font-medium">Unid.</th>
+                <th className="px-3 py-2 text-right font-medium">Quant.</th>
                 <th className="px-3 py-2 text-right font-medium">
                   V. unitário
                 </th>
@@ -506,10 +469,7 @@ export default function OrderDetailPage() {
               </thead>
               <tbody>
               {order.items.map((it) => (
-                <tr
-                  key={it.id}
-                  className="border-t border-gray-200"
-                >
+                <tr key={it.id} className="border-t border-gray-200">
                   <td className="px-3 py-2 whitespace-nowrap">
                     {it.itemNo ?? "-"}
                   </td>
