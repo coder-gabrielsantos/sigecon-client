@@ -16,8 +16,8 @@ const EXPENSE_OPTIONS = [
 const MODALITY_OPTIONS = [
   "DISPENSA DE LICITAÇÃO",
   "INEXIGIBILIDADE DE LICITAÇÃO",
-  "CONC. PÚBLICA Nº.",
-  "PREGÃO ELETRÔNICO Nº 001/2024.",
+  "CONC. PÚBLICA Nº",
+  "PREGÃO ELETRÔNICO Nº 001/2024",
   "OUTROS",
 ];
 
@@ -44,20 +44,20 @@ export default function OrderDetailPage() {
     // tipo de ordem (4 E–I)
     orderTypeText: "",
     // De / Para (8 CDE / 8 FGHI)
-    deText: "SECRETARIA MUNICIPAL DE GESTÃO E ORÇAMENTO.",
+    deText: "SECRETARIA MUNICIPAL DE GESTÃO E ORÇAMENTO",
     paraText: "05.281.738/0001-98",
     // Nome / Razão + assinatura (18 CDEF e 46 CD)
     nomeRazao: "S. T. BORBA",
     // Endereço (20/21 CD)
     endereco: "RUA DEP. RAIMUNDO BACELAR,421, CENTRO, COELHO NETO-MA",
     // Linha extra 20 EF (texto de contrato)
-    celularTexto: "CONTRATO Nº 009 DE 09 DE JANEIRO DE 2025.",
+    celularTexto: "CONTRATO Nº 009 DE 09 DE JANEIRO DE 2025",
     // Justificativa (44 CDEFGHI)
     justificativaCampo: "",
     // Seleções de tipos de despesa (11/12/13 HI)
     tiposDespesaSelecionados: ["SERVIÇOS / OBRAS DE ENGENHARIA"],
     // Seleções de modalidade (17/18/19/20/21 HI)
-    modalidadesSelecionadas: ["PREGÃO ELETRÔNICO Nº 001/2024."],
+    modalidadesSelecionadas: ["PREGÃO ELETRÔNICO Nº 001/2024"],
   });
 
   useEffect(() => {
@@ -75,7 +75,10 @@ export default function OrderDetailPage() {
           id: data.id,
           orderNumber: data.orderNumber,
           orderType: data.orderType,
-          issueDate: data.issueDate,
+          // data amigável dd/mm/aaaa
+          issueDate: data.issueDate
+            ? new Date(data.issueDate).toLocaleDateString("pt-BR")
+            : null,
           justification: data.justification,
           referencePeriod: data.referencePeriod,
           totalAmount: Number(data.totalAmount ?? 0),
@@ -320,7 +323,7 @@ export default function OrderDetailPage() {
 
         <div className="space-y-1">
           <label className="block text-xs font-medium text-gray-700">
-            Endereço (células 20/21 CD)
+            Endereço
           </label>
           <input
             type="text"
@@ -449,28 +452,35 @@ export default function OrderDetailPage() {
             Nenhum item vinculado a esta ordem.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs">
+          <div className="border border-gray-200 bg-gray-50 max-h-72 overflow-y-auto overflow-x-auto m-4 mt-0">
+            <table className="min-w-[900px] text-sm">
               <thead>
-              <tr className="bg-gray-100 text-[11px] text-gray-600 uppercase tracking-wide">
+              <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide sticky top-0 z-10">
                 <th className="px-3 py-2 text-left font-medium">Item</th>
                 <th className="px-3 py-2 text-left font-medium">
                   Descrição
                 </th>
-                <th className="px-3 py-2 text-left font-medium">Unid.</th>
-                <th className="px-3 py-2 text-right font-medium">Quant.</th>
-                <th className="px-3 py-2 text-right font-medium">
+                <th className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                  Unid.
+                </th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
+                  Quant.
+                </th>
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
                   V. unitário
                 </th>
-                <th className="px-3 py-2 text-right font-medium">
+                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
                   V. total
                 </th>
               </tr>
               </thead>
               <tbody>
               {order.items.map((it) => (
-                <tr key={it.id} className="border-t border-gray-200">
-                  <td className="px-3 py-2 whitespace-nowrap">
+                <tr
+                  key={it.id}
+                  className="border-t border-gray-200 bg-white"
+                >
+                  <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                     {it.itemNo ?? "-"}
                   </td>
                   <td className="px-3 py-2">
@@ -478,16 +488,16 @@ export default function OrderDetailPage() {
                         {it.description}
                       </span>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                     {it.unit || "—"}
                   </td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <td className="px-3 py-2 text-right whitespace-nowrap text-gray-700">
                     {it.quantity}
                   </td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <td className="px-3 py-2 text-right whitespace-nowrap text-gray-700">
                     {formatMoneyBRL(it.unitPrice)}
                   </td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <td className="px-3 py-2 text-right whitespace-nowrap font-medium text-gray-900">
                     {formatMoneyBRL(it.totalPrice)}
                   </td>
                 </tr>
