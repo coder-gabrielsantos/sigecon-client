@@ -63,7 +63,9 @@ export default function ContractDetailPage() {
       // mantém datas normalizadas após retorno
       setContract({
         ...updated,
-        startDate: normalizeDateForInput(updated.startDate || updated.start_date),
+        startDate: normalizeDateForInput(
+          updated.startDate || updated.start_date
+        ),
         endDate: normalizeDateForInput(updated.endDate || updated.end_date),
       });
     } catch (e) {
@@ -75,7 +77,12 @@ export default function ContractDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Tem certeza que deseja excluir este contrato e todos os itens?")) return;
+    if (
+      !window.confirm(
+        "Tem certeza que deseja excluir este contrato e todos os itens?"
+      )
+    )
+      return;
     try {
       setRemoving(true);
       await deleteContract(id);
@@ -119,15 +126,18 @@ export default function ContractDetailPage() {
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">Detalhes do contrato</h1>
-          <p className="text-xs text-gray-500">
-            Atualize os dados principais ou exclua o contrato.
+          <h1 className="text-lg font-semibold text-gray-900">
+            Detalhes do contrato
+          </h1>
+          <p className="text-sm text-gray-500">
+            Atualize os dados principais, gerencie itens e acompanhe o saldo
+            disponível.
           </p>
         </div>
         <button
           type="button"
           onClick={() => navigate("/contracts")}
-          className="text-xs text-gray-500 hover:text-gray-700"
+          className="text-sm text-gray-500 hover:text-gray-700"
         >
           Voltar para a lista
         </button>
@@ -141,11 +151,11 @@ export default function ContractDetailPage() {
         onSubmit={handleSave}
         className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4"
       >
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
               Número do contrato
             </label>
             <input
@@ -158,7 +168,7 @@ export default function ContractDetailPage() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
               Fornecedor
             </label>
             <input
@@ -172,7 +182,7 @@ export default function ContractDetailPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
               Início
             </label>
             <input
@@ -183,7 +193,7 @@ export default function ContractDetailPage() {
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
               Fim
             </label>
             <input
@@ -200,7 +210,7 @@ export default function ContractDetailPage() {
             type="button"
             onClick={handleDelete}
             disabled={removing}
-            className="text-xs text-red-600 hover:text-red-700 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 disabled:opacity-60"
+            className="text-sm text-red-600 hover:text-red-700 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 disabled:opacity-60"
           >
             {removing ? "Excluindo..." : "Excluir contrato"}
           </button>
@@ -208,18 +218,15 @@ export default function ContractDetailPage() {
           <button
             type="submit"
             disabled={saving}
-            className="text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+            className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
           >
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>
         </div>
       </form>
 
-      {/* NOVO: adicionar ou atualizar item pelo mesmo formulário */}
-      <ContractItemForm
-        contractId={id}
-        onUpdated={handleItemsUpdated}
-      />
+      {/* Form para adicionar/atualizar item */}
+      <ContractItemForm contractId={id} onUpdated={handleItemsUpdated}/>
 
       {/* Tabela de itens */}
       <ContractItemsTable items={contract.items}/>
@@ -242,31 +249,22 @@ function ContractFinancialSummary({ contract }) {
   const remaining =
     remainingRaw != null ? num(remainingRaw) ?? 0 : total - used;
 
-  let status = contract.status;
-  if (!status && total > 0) {
-    if (remaining <= 0) status = "ENCERRADO";
-    else if (remaining / total <= 0.1) status = "BAIXO";
-    else status = "OK";
-  }
-
-  const displayStatus = status || "—";
-
   return (
     <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">
+          <h2 className="text-base font-semibold text-gray-900">
             Resumo financeiro
           </h2>
-          <p className="text-[11px] text-gray-500">
+          <p className="text-sm text-gray-500">
             Visão geral do valor contratado, uso e saldo disponível.
           </p>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-center">
+        <div className="flex-1 space-y-1 text-left">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             Valor total do contrato
           </p>
           <p className="text-sm font-semibold text-gray-900">
@@ -274,8 +272,8 @@ function ContractFinancialSummary({ contract }) {
           </p>
         </div>
 
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+        <div className="flex-1 mt-3 sm:mt-0 space-y-1 text-center">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             Valor utilizado
           </p>
           <p className="text-sm font-semibold text-gray-900">
@@ -283,24 +281,16 @@ function ContractFinancialSummary({ contract }) {
           </p>
         </div>
 
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+        <div className="flex-1 mt-3 sm:mt-0 space-y-1 text-right">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             Saldo restante
           </p>
           <p className="text-sm font-semibold text-gray-900">
             {fmtMoney(remaining)}
           </p>
         </div>
-
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-            Status
-          </p>
-          <span className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-semibold text-gray-700 ring-1 ring-gray-200">
-            {displayStatus}
-          </span>
-        </div>
       </div>
+
     </section>
   );
 }
@@ -406,10 +396,10 @@ function ContractItemForm({ contractId, onUpdated }) {
     <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">
+          <h2 className="text-base font-semibold text-gray-900">
             Itens do contrato — adicionar ou atualizar
           </h2>
-          <p className="text-[11px] text-gray-500">
+          <p className="text-sm text-gray-500">
             Para atualizar, informe o número do item. Para adicionar um novo,
             deixe o campo de número em branco.
           </p>
@@ -421,22 +411,20 @@ function ContractItemForm({ contractId, onUpdated }) {
         <div className="grid gap-3 sm:grid-cols-12">
           {/* Nº do item (compacto) */}
           <div className="space-y-1 sm:col-span-1">
-            <label className="text-[11px] font-medium text-gray-600">
-              Item
-            </label>
+            <label className="text-xs font-medium text-gray-600">Item</label>
             <input
               type="number"
               min={1}
               value={itemNo}
               onChange={(e) => setItemNo(e.target.value)}
               placeholder=""
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Descrição (larga) */}
           <div className="space-y-1 sm:col-span-5">
-            <label className="text-[11px] font-medium text-gray-600">
+            <label className="text-xs font-medium text-gray-600">
               Descrição
             </label>
             <input
@@ -451,7 +439,7 @@ function ContractItemForm({ contractId, onUpdated }) {
 
           {/* Unidade (compacto) */}
           <div className="space-y-1 sm:col-span-1">
-            <label className="text-[11px] font-medium text-gray-600">
+            <label className="text-xs font-medium text-gray-600">
               Unidade
             </label>
             <input
@@ -460,13 +448,13 @@ function ContractItemForm({ contractId, onUpdated }) {
               value={form.unit}
               onChange={handleChange}
               placeholder="UN, CJ"
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Quantidade (compacto) */}
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-[11px] font-medium text-gray-600">
+            <label className="text-xs font-medium text-gray-600">
               Quantidade
             </label>
             <input
@@ -475,13 +463,13 @@ function ContractItemForm({ contractId, onUpdated }) {
               value={form.quantity}
               onChange={handleChange}
               placeholder="Ex: 100"
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* V. unitário (compacto) */}
           <div className="space-y-1 sm:col-span-3">
-            <label className="text-[11px] font-medium text-gray-600">
+            <label className="text-xs font-medium text-gray-600">
               V. unitário
             </label>
             <input
@@ -490,18 +478,18 @@ function ContractItemForm({ contractId, onUpdated }) {
               value={form.unitPrice}
               onChange={handleChange}
               placeholder="Ex: 1234,56"
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </div>
 
         {error && (
-          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             {error}
           </p>
         )}
         {success && (
-          <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
             {success}
           </p>
         )}
@@ -511,7 +499,7 @@ function ContractItemForm({ contractId, onUpdated }) {
           <button
             type="submit"
             disabled={loading}
-            className="text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+            className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
           >
             {loading ? "Salvando item..." : "Salvar item"}
           </button>
@@ -527,15 +515,19 @@ function ContractItemsTable({ items = [] }) {
   const { sortedItems, totalGeral } = prepareContractItems(items);
 
   return (
-    <section className="bg-white rounded-2xl p-4 sm:p-6">
+    <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-gray-900">Itens do contrato</h2>
-        <span className="text-xs text-gray-500">{sortedItems.length} itens</span>
+        <h2 className="text-base font-semibold text-gray-900">
+          Itens do contrato
+        </h2>
+        <span className="text-sm text-gray-500">
+          {sortedItems.length} itens
+        </span>
       </div>
 
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full text-xs sm:text-sm border-separate border-spacing-y-2">
-          <thead className="bg-indigo-50 text-indigo-700 uppercase text-[11px]">
+        <table className="min-w-full text-sm border-separate border-spacing-y-2">
+          <thead className="bg-indigo-50 text-indigo-700 uppercase text-xs">
           <tr>
             <th className="px-3 py-3 text-left">Item</th>
             <th className="px-3 py-3 text-left">Descrição</th>
@@ -558,11 +550,11 @@ function ContractItemsTable({ items = [] }) {
               <td className="px-3 py-2 text-gray-800 max-w-[320px] whitespace-nowrap overflow-hidden text-ellipsis">
                 {it.description}
               </td>
-              <td className="px-3 py-3">{it.unit}</td>
-              <td className="px-3 py-3 text-right tabular-nums">
+              <td className="px-3 py-3 text-gray-700">{it.unit}</td>
+              <td className="px-3 py-3 text-right tabular-nums text-gray-700">
                 {fmtNum(it.quantity)}
               </td>
-              <td className="px-3 py-3 text-right tabular-nums">
+              <td className="px-3 py-3 text-right tabular-nums text-gray-700">
                 {fmtMoney(it.unitPrice ?? it.unit_price)}
               </td>
               <td className="px-3 py-3 text-right tabular-nums rounded-r-xl font-medium text-gray-900">
@@ -574,7 +566,10 @@ function ContractItemsTable({ items = [] }) {
 
           <tfoot>
           <tr className="bg-white">
-            <td className="px-3 py-3 text-gray-600 rounded-l-xl" colSpan={5}>
+            <td
+              className="px-3 py-3 text-gray-600 rounded-l-xl"
+              colSpan={5}
+            >
               Total dos itens
             </td>
             <td className="px-3 py-3 text-right rounded-r-xl font-semibold text-gray-900">
@@ -649,7 +644,8 @@ function num(v) {
   if (typeof v === "number") return v;
   const raw = sanitize(v);
 
-  if (/^\d{1,3}(\.\d{3})+,\d{2}$/.test(raw)) return Number(raw.replace(/\./g, "").replace(",", "."));
+  if (/^\d{1,3}(\.\d{3})+,\d{2}$/.test(raw))
+    return Number(raw.replace(/\./g, "").replace(",", "."));
   if (/^\d+,\d{2}$/.test(raw)) return Number(raw.replace(",", "."));
   if (/^\d+\.\d{2}$/.test(raw)) return Number(raw);
   if (/^\d+$/.test(raw)) return Number(raw);

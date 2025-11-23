@@ -188,8 +188,7 @@ export default function UserPage() {
           user.nome = updatedProfile?.nome || novoNome;
           localStorage.setItem("sigecon_user", JSON.stringify(user));
         }
-      } catch (_) {
-      }
+      } catch (_) {}
 
       setTimeout(() => setNameMessage(""), 2500);
     } catch (err) {
@@ -322,7 +321,7 @@ export default function UserPage() {
     <div className="max-w-3xl mx-auto space-y-8">
       {/* Cabeçalho da página */}
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-lg font-semibold text-gray-900">
           Usuários do sistema
         </h1>
         <p className="text-sm text-gray-600">
@@ -336,7 +335,7 @@ export default function UserPage() {
         {/* topo: avatar + resumo */}
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center text-sm font-semibold shadow-md">
-            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6"/>}
+            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6" />}
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900">Meu perfil</p>
@@ -408,7 +407,7 @@ export default function UserPage() {
 
         {/* atualizar nome e senha */}
         <div className="border-t border-gray-100 pt-4 space-y-6">
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-base font-semibold text-gray-900">
             Atualizar dados de acesso
           </p>
 
@@ -418,7 +417,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-gray-500"/>
+              <UserIcon className="h-4 w-4 text-gray-500" />
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Nome exibido
               </p>
@@ -456,7 +455,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <LockKeyhole className="h-4 w-4 text-gray-500"/>
+              <LockKeyhole className="h-4 w-4 text-gray-500" />
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Alterar senha
               </p>
@@ -525,15 +524,15 @@ export default function UserPage() {
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-5">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-base font-semibold text-gray-900">
               Novo usuário do sistema
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-gray-500">
               Cadastre novos acessos para o sistema de contratos e ordens.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600 uppercase tracking-wide">
-            <Shield className="h-3 w-3"/>
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 uppercase tracking-wide">
+            <Shield className="h-3 w-3" />
             {isAdmin ? "ADMIN" : ""}
           </span>
         </div>
@@ -611,7 +610,10 @@ export default function UserPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setNewUserForm((prev) => ({ ...prev, role: "OPERADOR" }))
+                      setNewUserForm((prev) => ({
+                        ...prev,
+                        role: "OPERADOR",
+                      }))
                     }
                     className={`px-3 py-1.5 rounded-md font-medium transition ${
                       newUserForm.role === "OPERADOR"
@@ -645,7 +647,9 @@ export default function UserPage() {
                   <p className="font-semibold">
                     Senha inicial gerada para o novo usuário:
                   </p>
-                  <p className="font-mono text-sm">{newUserInitialPassword}</p>
+                  <p className="font-mono text-sm">
+                    {newUserInitialPassword}
+                  </p>
                   <p>
                     Anote essa senha e entregue ao usuário. Ela não será exibida
                     novamente nesta tela.
@@ -663,7 +667,7 @@ export default function UserPage() {
             {/* Lista de usuários cadastrados */}
             <div className="border-t border-gray-100 pt-5 space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-base font-semibold text-gray-900">
                   Usuários cadastrados
                 </p>
               </div>
@@ -680,9 +684,9 @@ export default function UserPage() {
                 </p>
               ) : (
                 <div className="rounded-xl border border-gray-200 bg-gray-50 max-h-72 overflow-auto">
-                  <table className="min-w-full text-xs">
+                  <table className="min-w-full text-sm">
                     <thead>
-                    <tr className="bg-gray-100 text-[11px] text-gray-600 uppercase tracking-wide">
+                    <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide">
                       <th className="px-3 py-2 text-left font-medium">
                         Nome
                       </th>
@@ -707,9 +711,9 @@ export default function UserPage() {
                           {formatCPF(u.cpf)}
                         </td>
                         <td className="px-3 py-2 text-left">
-                          <span className="text-xs font-medium text-gray-700">
-                            {u.role}
-                          </span>
+                            <span className="text-xs font-medium text-gray-700">
+                              {u.role}
+                            </span>
                         </td>
                       </tr>
                     ))}

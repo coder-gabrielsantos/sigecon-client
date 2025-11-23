@@ -326,7 +326,10 @@ export default function OrdersListPage() {
             unit: it.unit,
             contractQuantity: Number(it.quantity ?? 0),
             availableQuantity: Number(
-              it.availableQuantity ?? it.available_quantity ?? it.quantity ?? 0
+              it.availableQuantity ??
+              it.available_quantity ??
+              it.quantity ??
+              0
             ),
             unitPrice: Number(it.unitPrice ?? it.unit_price ?? 0),
             totalPrice: Number(it.totalPrice ?? it.total_price ?? 0),
@@ -387,10 +390,10 @@ export default function OrdersListPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* CABEÇALHO */}
       <header className="space-y-1">
-        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+        <h1 className="text-lg font-semibold text-gray-900">
           Ordens vinculadas a contratos
         </h1>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-500">
           Emita ordens de fornecimento ou serviço a partir de um contrato já
           cadastrado. O valor é debitado automaticamente do saldo do contrato.
         </p>
@@ -405,13 +408,13 @@ export default function OrdersListPage() {
 
       {/* CARD DE EMISSÃO */}
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-5">
-        {/* TÍTULO + BOTÃO LIMPAR */}
+        {/* TÍTULO */}
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-base font-semibold text-gray-900">
               Emitir nova ordem
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-gray-500">
               Escolha o contrato, o tipo de ordem, os itens e a finalidade.
             </p>
           </div>
@@ -481,7 +484,7 @@ export default function OrdersListPage() {
               value={justification}
               onChange={(e) => setJustification(e.target.value)}
             />
-            <p className="text-[11px] text-gray-400">
+            <p className="text-xs text-gray-400">
               Campo em linha única, sem aumento de altura.
             </p>
           </div>
@@ -489,10 +492,10 @@ export default function OrdersListPage() {
           {/* ITENS DO CONTRATO */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-base font-semibold text-gray-900">
                 Itens deste contrato
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm text-gray-500">
                 Informe a quantidade para cada item que fará parte da ordem.
               </p>
             </div>
@@ -544,7 +547,10 @@ export default function OrdersListPage() {
                       .map((it) => {
                         const qStr = itemsQuantities[it.id] || "";
                         const numeric = Number(
-                          qStr.toString().replace(/\./g, "").replace(",", ".")
+                          qStr
+                            .toString()
+                            .replace(/\./g, "")
+                            .replace(",", ".")
                         );
                         const lineTotal =
                           !numeric || numeric <= 0
@@ -572,7 +578,10 @@ export default function OrdersListPage() {
                                 placeholder="0"
                                 value={qStr}
                                 onChange={(e) =>
-                                  handleItemQuantityChange(it.id, e.target.value)
+                                  handleItemQuantityChange(
+                                    it.id,
+                                    e.target.value
+                                  )
                                 }
                               />
                             </td>
@@ -622,10 +631,10 @@ export default function OrdersListPage() {
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200">
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-base font-semibold text-gray-900">
               Ordens emitidas
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-gray-500">
               Histórico das ordens geradas a partir dos contratos.
             </p>
           </div>

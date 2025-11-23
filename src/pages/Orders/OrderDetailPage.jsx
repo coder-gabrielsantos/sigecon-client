@@ -41,22 +41,22 @@ export default function OrderDetailPage() {
 
   // Dados extras para preencher o XLSX
   const [xlsxExtras, setXlsxExtras] = useState({
-    // tipo de ordem (4 E–I)
+    // tipo de ordem
     orderTypeText: "",
-    // De / Para (8 CDE / 8 FGHI)
+    // De / Para
     deText: "SECRETARIA MUNICIPAL DE GESTÃO E ORÇAMENTO",
     paraText: "05.281.738/0001-98",
-    // Nome / Razão + assinatura (18 CDEF e 46 CD)
+    // Nome / Razão + assinatura
     nomeRazao: "S. T. BORBA",
-    // Endereço (20/21 CD)
+    // Endereço
     endereco: "RUA DEP. RAIMUNDO BACELAR,421, CENTRO, COELHO NETO-MA",
-    // Linha extra 20 EF (texto de contrato)
+    // Texto extra do contrato
     celularTexto: "CONTRATO Nº 009 DE 09 DE JANEIRO DE 2025",
-    // Justificativa (44 CDEFGHI)
+    // Justificativa
     justificativaCampo: "",
-    // Seleções de tipos de despesa (11/12/13 HI)
+    // Tipos de despesa
     tiposDespesaSelecionados: ["SERVIÇOS / OBRAS DE ENGENHARIA"],
-    // Seleções de modalidade (17/18/19/20/21 HI)
+    // Modalidades de licitação
     modalidadesSelecionadas: ["PREGÃO ELETRÔNICO Nº 001/2024"],
   });
 
@@ -224,7 +224,7 @@ export default function OrderDetailPage() {
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             Ordem vinculada a contrato
           </p>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-lg font-semibold text-gray-900">
             {order.orderType || "Ordem"} nº {order.orderNumber || order.id}
           </h1>
           {order.issueDate && (
@@ -247,12 +247,12 @@ export default function OrderDetailPage() {
       {/* Form para preencher campos do XLSX */}
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-5">
         <div className="space-y-1">
-          <h2 className="text-sm font-semibold text-gray-900">
+          <h2 className="text-base font-semibold text-gray-900">
             Dados para geração da planilha
           </h2>
-          <p className="text-xs text-gray-500">
-            Esses campos serão escritos diretamente nas células do modelo XLSX
-            antes do download. Você pode ajustar os textos conforme precisar.
+          <p className="text-sm text-gray-500">
+            Esses campos serão escritos diretamente no modelo XLSX antes do
+            download. Você pode ajustar os textos conforme precisar.
           </p>
         </div>
 
@@ -273,7 +273,7 @@ export default function OrderDetailPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <label className="block text-xs font-medium text-gray-700">
-              De (células 8 CDE)
+              De
             </label>
             <input
               type="text"
@@ -284,7 +284,7 @@ export default function OrderDetailPage() {
           </div>
           <div className="space-y-1">
             <label className="block text-xs font-medium text-gray-700">
-              Para (células 8 FGHI)
+              Para
             </label>
             <input
               type="text"
@@ -299,7 +299,7 @@ export default function OrderDetailPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <label className="block text-xs font-medium text-gray-700">
-              Nome / Razão Social (18 CDEF e 46 CD)
+              Nome / Razão Social
             </label>
             <input
               type="text"
@@ -310,7 +310,7 @@ export default function OrderDetailPage() {
           </div>
           <div className="space-y-1">
             <label className="block text-xs font-medium text-gray-700">
-              Texto extra (20 EF) — ex.: informação do contrato
+              Texto extra (ex.: informação do contrato)
             </label>
             <input
               type="text"
@@ -337,7 +337,7 @@ export default function OrderDetailPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-700">
-              Tipos de despesa (11/12/13 HI)
+              Tipos de despesa
             </p>
             <div className="space-y-1.5">
               {EXPENSE_OPTIONS.map((opt) => (
@@ -359,7 +359,7 @@ export default function OrderDetailPage() {
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-700">
-              Modalidades de licitação (17–21 HI)
+              Modalidades de licitação
             </p>
             <div className="space-y-1.5">
               {MODALITY_OPTIONS.map((opt) => (
@@ -383,8 +383,7 @@ export default function OrderDetailPage() {
         {/* Justificativa */}
         <div className="space-y-1">
           <label className="block text-xs font-medium text-gray-700">
-            Justificativa / Finalidade / Período de Referência (célula 44
-            CDEFGHI)
+            Justificativa / Finalidade / Período de Referência
           </label>
           <textarea
             rows={3}
@@ -401,7 +400,7 @@ export default function OrderDetailPage() {
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Contrato
             </p>
             <p className="text-sm font-semibold text-gray-900">
@@ -409,7 +408,7 @@ export default function OrderDetailPage() {
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Fornecedor
             </p>
             <p className="text-sm font-medium text-gray-900">
@@ -417,7 +416,7 @@ export default function OrderDetailPage() {
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Total da ordem
             </p>
             <p className="text-lg font-semibold text-gray-900">
@@ -427,7 +426,7 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="border-t border-gray-100 pt-4 space-y-1">
-          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
             Finalidade / Justificativa (dados originais da ordem)
           </p>
           <p className="text-sm text-gray-800">
@@ -439,10 +438,10 @@ export default function OrderDetailPage() {
       {/* Itens da ordem */}
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200">
         <div className="px-4 py-4 border-b border-gray-200">
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-base font-semibold text-gray-900">
             Itens desta ordem
           </p>
-          <p className="text-[11px] text-gray-500">
+          <p className="text-sm text-gray-500">
             Baseado nos itens do contrato selecionado.
           </p>
         </div>
