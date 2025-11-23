@@ -62,7 +62,7 @@ export default function UserPage() {
   const [newUserForm, setNewUserForm] = useState({
     nome: "",
     cpf: "",
-    role: "OPERADOR",
+    role: "ADMIN",
   });
   const [newUserLoading, setNewUserLoading] = useState(false);
   const [newUserError, setNewUserError] = useState("");
