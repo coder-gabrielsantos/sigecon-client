@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../context/AuthContext.jsx";
+import banner from "../../utils/images/banner.png";
 
 function formatCPF(value) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -63,36 +64,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-gray-50">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* LEFT SIDE - IMAGE / BRAND AREA */}
       <div className="hidden lg:flex relative">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1581092334607-25b1d1c5c5d4?fit=crop&w=1200&q=80')",
+            backgroundImage: `url(${banner})`,
           }}
         />
-        <div className="absolute inset-0 bg-black/40"/>
+        <div className="absolute inset-0 bg-black/55"/>
 
-        <div className="relative z-10 flex flex-col justify-between p-8 w-full">
-          <div>
+        <div className="relative z-10 flex flex-col justify-between p-10 w-full">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-white/10 flex items-center justify-center text-xs font-semibold text-white/90">
+              SIGE
+            </div>
             <div className="text-white leading-tight">
-              <p className="text-sm font-medium text-white/80">
+              <p className="text-xs font-medium tracking-[0.18em] text-white/70 uppercase">
                 PREFEITURA MUNICIPAL DE COELHO NETO
               </p>
             </div>
           </div>
 
-          <div className="text-white">
-            <h2 className="text-xl font-semibold leading-tight">
+          <div className="text-white max-w-md">
+            <h2 className="text-2xl font-semibold leading-snug">
               Sistema de Gestão de Contratos e Ordens de Serviço
             </h2>
-            <p className="text-sm text-white/80 mt-2 max-w-sm">
+            <p className="text-sm text-white/80 mt-3">
               Acesso interno para controle de contratos, emissão de ordens de
               serviço e acompanhamento de saldo orçamentário.
             </p>
-            <p className="text-[11px] text-white/50 mt-6">
+            <p className="text-[11px] text-white/50 mt-8">
               © {new Date().getFullYear()} Prefeitura Municipal de Coelho Neto
             </p>
           </div>
@@ -100,26 +103,45 @@ export default function LoginPage() {
       </div>
 
       {/* RIGHT SIDE - LOGIN CARD */}
-      <div className="flex items-center justify-center p-6 sm:p-8">
+      <div className="flex items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
         <div className="w-full max-w-sm">
-          <div className="mb-8 lg:mb-10">
+          <div className="mb-8 lg:mb-10 flex items-center justify-between gap-4">
             <div className="leading-tight">
-              <p className="text-[11px] font-medium text-gray-500">
-                PREFEITURA MUNICIPAL DE COELHO NETO
+              <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                <span className="hidden sm:inline">
+                  PREFEITURA MUNICIPAL DE COELHO NETO
+                </span>
+                <span className="sm:hidden">Acesso interno</span>
               </p>
-              <p className="text-base font-semibold text-gray-900 mt-1">
+              <p className="text-base sm:text-lg font-semibold text-slate-50 mt-1">
                 Acesso ao sistema
               </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Entre com seu CPF e senha para continuar.
+              </p>
+            </div>
+
+            <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-300 text-xs font-semibold">
+              v0.1
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl ring-1 ring-slate-200/80 p-6 sm:p-7 space-y-6">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-900">
+                Entrar na sua conta
+              </p>
+              <p className="text-xs text-slate-500">
+                Credenciais fornecidas pela administração do sistema.
+              </p>
+            </div>
+
             <form className="space-y-5" onSubmit={handleSubmit}>
               {/* CPF */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label
                   htmlFor="cpf"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-slate-700"
                 >
                   CPF
                 </label>
@@ -134,24 +156,19 @@ export default function LoginPage() {
                   onChange={handleChange}
                   maxLength={14}
                   required
+                  className="text-sm"
                 />
               </div>
 
               {/* Senha com ícone de mostrar/ocultar */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label
                     htmlFor="password"
-                    className="text-sm font-medium text-gray-700"
+                    className="text-sm font-medium text-slate-700"
                   >
                     Senha
                   </label>
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
-                  >
-                    Esqueci a senha
-                  </button>
                 </div>
 
                 <div className="relative">
@@ -163,14 +180,14 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     value={form.password}
                     onChange={handleChange}
-                    className="pr-10"
+                    className="pr-10 text-sm"
                     required
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                     aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   >
                     {showPassword ? (
@@ -216,19 +233,15 @@ export default function LoginPage() {
                 </p>
               )}
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full mt-2"
+                disabled={loading}
+              >
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
-
-            <p className="text-[11px] text-gray-500 text-center mt-6 leading-relaxed">
-              O uso deste sistema é restrito. Todas as ações são registradas.
-            </p>
           </div>
-
-          <p className="text-[11px] text-gray-400 text-center mt-6">
-            v0.1 • Uso interno
-          </p>
         </div>
       </div>
     </div>
