@@ -84,14 +84,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="text-white max-w-md">
+          <div className="text-white max-w-lg">
             <h2 className="text-2xl font-semibold leading-snug">
               Sistema de Gestão de Contratos e Ordens
             </h2>
-            <p className="text-sm text-white/80 mt-3">
-              Acesso interno para controle de contratos, emissão de ordens e acompanhamento de saldo orçamentário.
-            </p>
-            <p className="text-[11px] text-white/50 mt-8">
+            <p className="text-[14px] text-white/50">
               © {new Date().getFullYear()} Prefeitura Municipal de Coelho Neto
             </p>
           </div>
@@ -228,6 +225,19 @@ export default function LoginPage() {
               </Button>
             </form>
           </div>
+
+          {/* Créditos do desenvolvedor */}
+          <p className="mt-4 text-[12px] text-center text-slate-400">
+            Desenvolvido por{" "}
+            <a
+              href="https://jogabriel-santos.vercel.app/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold text-slate-100 underline underline-offset-2 hover:text-slate-50"
+            >
+              Gabriel Santos
+            </a>
+          </p>
         </div>
       </div>
     </div>
