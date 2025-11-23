@@ -6,6 +6,7 @@ export default function Sidebar() {
   function handleLogout() {
     try {
       clearSession();
+      // eslint-disable-next-line no-unused-vars
     } catch (e) {
       // ignora erros de localStorage
     }
