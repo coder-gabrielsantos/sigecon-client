@@ -46,7 +46,7 @@ export default function Sidebar() {
 
       {/* footer + logout */}
       <div className="px-4 py-4 border-t border-white/10 flex items-center justify-between text-[11px]">
-        <span className="text-white/40">v0.1 protótipo</span>
+        <span className="text-white/40">v1.0</span>
 
         <button
           type="button"
