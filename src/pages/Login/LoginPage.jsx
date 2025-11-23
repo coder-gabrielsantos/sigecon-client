@@ -77,9 +77,6 @@ export default function LoginPage() {
 
         <div className="relative z-10 flex flex-col justify-between p-10 w-full">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-white/10 flex items-center justify-center text-xs font-semibold text-white/90">
-              SIGE
-            </div>
             <div className="text-white leading-tight">
               <p className="text-xs font-medium tracking-[0.18em] text-white/70 uppercase">
                 PREFEITURA MUNICIPAL DE COELHO NETO
@@ -89,11 +86,10 @@ export default function LoginPage() {
 
           <div className="text-white max-w-md">
             <h2 className="text-2xl font-semibold leading-snug">
-              Sistema de Gestão de Contratos e Ordens de Serviço
+              Sistema de Gestão de Contratos e Ordens
             </h2>
             <p className="text-sm text-white/80 mt-3">
-              Acesso interno para controle de contratos, emissão de ordens de
-              serviço e acompanhamento de saldo orçamentário.
+              Acesso interno para controle de contratos, emissão de ordens e acompanhamento de saldo orçamentário.
             </p>
             <p className="text-[11px] text-white/50 mt-8">
               © {new Date().getFullYear()} Prefeitura Municipal de Coelho Neto
@@ -107,22 +103,12 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:mb-10 flex items-center justify-between gap-4">
             <div className="leading-tight">
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
-                <span className="hidden sm:inline">
-                  PREFEITURA MUNICIPAL DE COELHO NETO
-                </span>
-                <span className="sm:hidden">Acesso interno</span>
-              </p>
               <p className="text-base sm:text-lg font-semibold text-slate-50 mt-1">
                 Acesso ao sistema
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-s text-slate-400 mt-1">
                 Entre com seu CPF e senha para continuar.
               </p>
-            </div>
-
-            <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-300 text-xs font-semibold">
-              v0.1
             </div>
           </div>
 
