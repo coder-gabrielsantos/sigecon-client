@@ -5,7 +5,9 @@ import {
   updateContract,
   deleteContract,
   updateContractItem,
+  deleteContractItem,
 } from "../../services/contractsService";
+import { getMe } from "../../services/authService";
 
 /** Página de detalhes do contrato */
 export default function ContractDetailPage() {
@@ -18,6 +20,18 @@ export default function ContractDetailPage() {
   const [error, setError] = useState("");
   const [contract, setContract] = useState(null);
 
+  // role do usuário logado
+  const [role, setRole] = useState(null);
+
+  // item selecionado para edição/exclusão
+  const [activeItem, setActiveItem] = useState(null);
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+
+  // modal de confirmação para excluir contrato
+  const [isDeleteContractModalOpen, setIsDeleteContractModalOpen] =
+    useState(false);
+
+  // carrega contrato
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -42,6 +56,25 @@ export default function ContractDetailPage() {
       alive = false;
     };
   }, [id]);
+
+  // carrega role do usuário (ADMIN / OPERADOR)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const me = await getMe();
+        if (!alive) return;
+        setRole(me?.role || null);
+      } catch (e) {
+        console.error("Erro ao carregar role do usuário", e);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const isAdmin = role === "ADMIN";
 
   const handleChange = (field, value) => {
     setContract((prev) => ({ ...prev, [field]: value }));
@@ -76,21 +109,25 @@ export default function ContractDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        "Tem certeza que deseja excluir este contrato e todos os itens?"
-      )
-    )
-      return;
+  const handleOpenDeleteContractModal = () => {
+    setIsDeleteContractModalOpen(true);
+  };
+
+  const handleCloseDeleteContractModal = () => {
+    setIsDeleteContractModalOpen(false);
+  };
+
+  const handleConfirmDeleteContract = async () => {
     try {
       setRemoving(true);
+      setError("");
       await deleteContract(id);
       navigate("/contracts");
     } catch (e) {
       console.error(e);
       setError("Não foi possível excluir o contrato.");
       setRemoving(false);
+      setIsDeleteContractModalOpen(false);
     }
   };
 
@@ -104,6 +141,17 @@ export default function ContractDetailPage() {
         updatedContract.endDate || updatedContract.end_date
       ),
     });
+  };
+
+  const handleItemClick = (item) => {
+    if (!item) return;
+    setActiveItem(item);
+    setIsItemModalOpen(true);
+  };
+
+  const handleCloseItemModal = () => {
+    setIsItemModalOpen(false);
+    setActiveItem(null);
   };
 
   if (loading) {
@@ -217,7 +265,7 @@ export default function ContractDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2">
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={handleOpenDeleteContractModal}
             disabled={removing}
             className="text-xs sm:text-sm text-red-600 hover:text-red-700 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 disabled:opacity-60 w-full sm:w-auto text-center"
           >
@@ -234,11 +282,37 @@ export default function ContractDetailPage() {
         </div>
       </form>
 
-      {/* Form para adicionar/atualizar item */}
-      <ContractItemForm contractId={id} onUpdated={handleItemsUpdated}/>
+      {/* Form para ADICIONAR novo item (apenas ADMIN) */}
+      <ContractItemForm
+        contractId={id}
+        onUpdated={handleItemsUpdated}
+        isAdmin={isAdmin}
+      />
 
       {/* Tabela “solta” no final da página */}
-      <ContractItemsTable items={contract.items}/>
+      <ContractItemsTable items={contract.items} onItemClick={handleItemClick}/>
+
+      {/* Modal moderno para atualizar / excluir item */}
+      {activeItem && isItemModalOpen && (
+        <ContractItemModal
+          open={isItemModalOpen}
+          item={activeItem}
+          onClose={handleCloseItemModal}
+          isAdmin={isAdmin}
+          contractId={id}
+          onUpdated={handleItemsUpdated}
+        />
+      )}
+
+      {/* Modal de confirmação para excluir contrato */}
+      {isDeleteContractModalOpen && (
+        <DeleteContractModal
+          open={isDeleteContractModalOpen}
+          onClose={handleCloseDeleteContractModal}
+          onConfirm={handleConfirmDeleteContract}
+          loading={removing}
+        />
+      )}
     </div>
   );
 }
@@ -303,14 +377,14 @@ function ContractFinancialSummary({ contract }) {
   );
 }
 
-/* ===================== FORM DE ITEM ===================== */
+/* ===================== FORM DE ITEM (APENAS ADICIONAR) ===================== */
 /**
- * Regra:
- * - Se o usuário informar um Nº do item que já existe, ele será ATUALIZADO.
- * - Se deixar o Nº do item em branco, será ADICIONADO um novo item ao contrato.
+ * Agora:
+ * - Este container serve apenas para ADICIONAR um novo item ao contrato.
+ * - Apenas ADMIN pode adicionar novos itens.
+ * - Para atualizar ou excluir, o usuário clica no item da tabela e usa o modal.
  */
-function ContractItemForm({ contractId, onUpdated }) {
-  const [itemNo, setItemNo] = useState("");
+function ContractItemForm({ contractId, onUpdated, isAdmin }) {
   const [form, setForm] = useState({
     description: "",
     unit: "",
@@ -320,6 +394,11 @@ function ContractItemForm({ contractId, onUpdated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  if (!isAdmin) {
+    // Operador não adiciona itens; apenas atualiza via modal
+    return null;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -331,60 +410,36 @@ function ContractItemForm({ contractId, onUpdated }) {
     setError("");
     setSuccess("");
 
-    const hasAnyField =
-      form.description.trim() ||
-      form.unit.trim() ||
-      form.quantity.trim() ||
-      form.unitPrice.trim();
-
-    if (!hasAnyField) {
-      setError("Preencha pelo menos um campo do item.");
-      return;
-    }
-
-    const payload = {};
-
-    const itemNoTrim = String(itemNo || "").trim();
-    if (itemNoTrim) {
-      const n = Number(itemNoTrim);
-      if (!n || Number.isNaN(n)) {
-        setError(
-          "Informe um número de item válido ou deixe em branco para adicionar."
-        );
-        return;
-      }
-      payload.itemNo = n;
-    }
-
+    const description = form.description.trim();
+    const unit = form.unit.trim();
     const qNum = form.quantity.trim() !== "" ? num(form.quantity) : null;
     const vuNum = form.unitPrice.trim() !== "" ? num(form.unitPrice) : null;
 
-    if (form.description.trim()) payload.description = form.description.trim();
-    if (form.unit.trim()) payload.unit = form.unit.trim();
-    if (qNum != null) payload.quantity = qNum;
-    if (vuNum != null) payload.unitPrice = vuNum;
-
-    // total calculado internamente (qtd x v.unit)
-    if (qNum != null && vuNum != null) {
-      payload.totalPrice = qNum * vuNum;
+    if (!description || !unit || qNum == null || vuNum == null) {
+      setError(
+        "Preencha descrição, unidade, quantidade e valor unitário para adicionar um novo item."
+      );
+      return;
     }
+
+    const payload = {
+      description,
+      unit,
+      quantity: qNum,
+      unitPrice: vuNum,
+      totalPrice: qNum * vuNum,
+    };
 
     try {
       setLoading(true);
       const updatedContract = await updateContractItem(contractId, payload);
-      setSuccess(
-        payload.itemNo
-          ? "Item atualizado com sucesso."
-          : "Novo item adicionado ao contrato."
-      );
-      setError("");
+      setSuccess("Novo item adicionado ao contrato.");
       setForm({
         description: "",
         unit: "",
         quantity: "",
         unitPrice: "",
       });
-      setItemNo("");
       setTimeout(() => setSuccess(""), 2500);
       onUpdated?.(updatedContract);
     } catch (err) {
@@ -393,7 +448,7 @@ function ContractItemForm({ contractId, onUpdated }) {
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
-        "Não foi possível salvar o item.";
+        "Não foi possível adicionar o item.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -405,35 +460,19 @@ function ContractItemForm({ contractId, onUpdated }) {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
           <h2 className="text-sm sm:text-base font-semibold text-gray-900">
-            Itens do contrato — adicionar ou atualizar
+            Itens do contrato — adicionar novo item
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-gray-500">
-            Para atualizar, informe o número do item. Para adicionar um novo,
-            deixe o campo de número em branco.
+            Adicione novos itens ao contrato. Para atualizar ou excluir, clique
+            em um item na tabela abaixo.
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Inputs em linha no desktop, empilhados no mobile */}
         <div className="grid gap-3 sm:grid-cols-12">
-          {/* Nº do item (compacto) */}
-          <div className="space-y-1 sm:col-span-1">
-            <label className="text-[11px] sm:text-xs font-medium text-gray-600">
-              Item
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={itemNo}
-              onChange={(e) => setItemNo(e.target.value)}
-              placeholder=""
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Descrição (larga) */}
-          <div className="space-y-1 sm:col-span-5">
+          {/* Descrição */}
+          <div className="space-y-1 sm:col-span-6">
             <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               Descrição
             </label>
@@ -447,8 +486,8 @@ function ContractItemForm({ contractId, onUpdated }) {
             />
           </div>
 
-          {/* Unidade (compacto) */}
-          <div className="space-y-1 sm:col-span-1">
+          {/* Unidade */}
+          <div className="space-y-1 sm:col-span-2">
             <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               Unidade
             </label>
@@ -462,7 +501,7 @@ function ContractItemForm({ contractId, onUpdated }) {
             />
           </div>
 
-          {/* Quantidade (compacto) */}
+          {/* Quantidade */}
           <div className="space-y-1 sm:col-span-2">
             <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               Quantidade
@@ -477,8 +516,8 @@ function ContractItemForm({ contractId, onUpdated }) {
             />
           </div>
 
-          {/* V. unitário (compacto) */}
-          <div className="space-y-1 sm:col-span-3">
+          {/* V. unitário */}
+          <div className="space-y-1 sm:col-span-2">
             <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               V. unitário
             </label>
@@ -499,19 +538,18 @@ function ContractItemForm({ contractId, onUpdated }) {
           </p>
         )}
         {success && (
-          <p className="text-xs sm:text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <p className="text-xs sm:text-sm text-emerald-700 bg-emerald-50 border-emerald-200 border rounded-lg px-3 py-2">
             {success}
           </p>
         )}
 
-        {/* Botão embaixo, alinhado à direita */}
-        <div className="flex justify-end">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
           <button
             type="submit"
             disabled={loading}
             className="text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60 w-full sm:w-auto"
           >
-            {loading ? "Salvando item..." : "Salvar item"}
+            {loading ? "Adicionando item..." : "Adicionar item"}
           </button>
         </div>
       </form>
@@ -519,24 +557,394 @@ function ContractItemForm({ contractId, onUpdated }) {
   );
 }
 
+/* ===================== MODAL DE ITEM (ATUALIZAR / EXCLUIR) ===================== */
+
+function ContractItemModal({
+                             open,
+                             item,
+                             onClose,
+                             isAdmin,
+                             contractId,
+                             onUpdated,
+                           }) {
+  const [form, setForm] = useState({
+    description: "",
+    unit: "",
+    quantity: "",
+    unitPrice: "",
+  });
+  const [loadingUpdate, setLoadingUpdate] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!item) return;
+    setForm({
+      description: item.description ?? "",
+      unit: item.unit ?? "",
+      quantity:
+        item.quantity != null && item.quantity !== ""
+          ? String(item.quantity)
+          : "",
+      unitPrice:
+        item.unitPrice != null
+          ? String(item.unitPrice)
+          : item.unit_price != null
+            ? String(item.unit_price)
+            : "",
+    });
+    setError("");
+    setSuccess("");
+  }, [item]);
+
+  if (!open || !item) return null;
+
+  const itemNo = getItemNo(item);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!itemNo) {
+      setError("Não foi possível identificar o número do item.");
+      return;
+    }
+
+    const payload = { itemNo };
+
+    const qNum =
+      form.quantity.trim() !== "" ? num(form.quantity.trim()) : null;
+    const vuNum =
+      form.unitPrice.trim() !== "" ? num(form.unitPrice.trim()) : null;
+
+    if (!isAdmin) {
+      // OPERADOR: só pode alterar QUANTIDADE
+      if (qNum == null) {
+        setError("Informe a nova quantidade para atualizar o item.");
+        return;
+      }
+      payload.quantity = qNum;
+    } else {
+      // ADMIN: pode alterar todos os campos
+      const description = form.description.trim();
+      const unit = form.unit.trim();
+      if (description) payload.description = description;
+      if (unit) payload.unit = unit;
+      if (qNum != null) payload.quantity = qNum;
+      if (vuNum != null) payload.unitPrice = vuNum;
+      if (qNum != null && vuNum != null) {
+        payload.totalPrice = qNum * vuNum;
+      }
+    }
+
+    try {
+      setLoadingUpdate(true);
+      const updatedContract = await updateContractItem(contractId, payload);
+      setSuccess("Item atualizado com sucesso.");
+      onUpdated?.(updatedContract);
+      setTimeout(() => {
+        setSuccess("");
+        onClose();
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Não foi possível atualizar o item.";
+      setError(msg);
+    } finally {
+      setLoadingUpdate(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!isAdmin) {
+      setError("Apenas administradores podem excluir itens do contrato.");
+      return;
+    }
+
+    if (!itemNo) {
+      setError("Não foi possível identificar o número do item para excluir.");
+      return;
+    }
+
+    try {
+      setLoadingDelete(true);
+      const updatedContract = await deleteContractItem(contractId, itemNo);
+      setSuccess("Item removido com sucesso.");
+      onUpdated?.(updatedContract);
+      setTimeout(() => {
+        setSuccess("");
+        onClose();
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Não foi possível remover o item.";
+      setError(msg);
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm px-3 sm:px-4">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-gray-200">
+        {/* header */}
+        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 pb-3 border-b border-gray-100">
+          <div className="space-y-1">
+            <p className="text-[11px] sm:text-xs font-medium text-indigo-600 uppercase tracking-wide">
+              Item {itemNo ?? ""}
+            </p>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+              Detalhes do item
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-500">
+              Atualize a quantidade ou demais campos. Para excluir, use o botão
+              abaixo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-3 inline-flex items-center justify-center rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+          >
+            <span className="sr-only">Fechar</span>
+            <svg
+              className="h-4 w-4 sm:h-5 sm:w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 8.586 4.293 2.879A1 1 0 0 0 2.879 4.293L8.586 10l-5.707 5.707a1 1 0 1 0 1.414 1.414L10 11.414l5.707 5.707a1 1 0 0 0 1.414-1.414L11.414 10l5.707-5.707A1 1 0 0 0 15.707 2.88L10 8.586Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* body */}
+        <form
+          onSubmit={handleUpdate}
+          className="px-4 sm:px-6 pt-4 pb-4 sm:pb-5 space-y-4"
+        >
+          <div className="grid gap-3 sm:grid-cols-12">
+            {/* descrição - linha inteira */}
+            <div className="space-y-1 sm:col-span-12">
+              <label className="text-[11px] sm:text-xs font-medium text-gray-600">
+                Descrição
+              </label>
+              <input
+                name="description"
+                type="text"
+                value={form.description}
+                onChange={handleChange}
+                disabled={!isAdmin}
+                className={`w-full rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  !isAdmin ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
+              />
+            </div>
+
+            {/* segunda linha: os 3 campos lado a lado */}
+            <div className="space-y-1 sm:col-span-4">
+              <label className="text-[11px] sm:text-xs font-medium text-gray-600">
+                Unidade
+              </label>
+              <input
+                name="unit"
+                type="text"
+                value={form.unit}
+                onChange={handleChange}
+                disabled={!isAdmin}
+                className={`w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  !isAdmin ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-4">
+              <label className="text-[11px] sm:text-xs font-medium text-gray-600">
+                Quantidade
+              </label>
+              <input
+                name="quantity"
+                type="text"
+                value={form.quantity}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-4">
+              <label className="text-[11px] sm:text-xs font-medium text-gray-600">
+                V. unitário
+              </label>
+              <input
+                name="unitPrice"
+                type="text"
+                value={form.unitPrice}
+                onChange={handleChange}
+                disabled={!isAdmin}
+                className={`w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  !isAdmin ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
+              />
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-xs sm:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p className="text-xs sm:text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              {success}
+            </p>
+          )}
+
+          {/* footer */}
+          <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row gap-2">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={loadingDelete}
+                  className="text-xs sm:text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+                >
+                  {loadingDelete ? "Excluindo..." : "Excluir item"}
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-xs sm:text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loadingUpdate}
+                className="text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+              >
+                {loadingUpdate ? "Salvando..." : "Salvar alterações"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== MODAL EXCLUSÃO CONTRATO ===================== */
+
+function DeleteContractModal({ open, onClose, onConfirm, loading }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm px-3 sm:px-4">
+      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-gray-200">
+        <div className="px-4 sm:px-6 pt-4 pb-3 border-b border-gray-100 flex items-start justify-between">
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+              Excluir contrato
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-3 inline-flex items-center justify-center rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+          >
+            <span className="sr-only">Fechar</span>
+            <svg
+              className="h-4 w-4 sm:h-5 sm:w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 8.586 4.293 2.879A1 1 0 0 0 2.879 4.293L8.586 10l-5.707 5.707a1 1 0 1 0 1.414 1.414L10 11.414l5.707 5.707a1 1 0 0 0 1.414-1.414L11.414 10l5.707-5.707A1 1 0 0 0 15.707 2.88L10 8.586Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-4 sm:px-6 pt-4 pb-4 sm:pb-5 space-y-4">
+          <p className="text-xs sm:text-sm text-gray-600">
+            Tem certeza que deseja excluir este contrato? Todos os itens
+            vinculados serão removidos.
+          </p>
+
+          <div className="mt-2 flex flex-col sm:flex-row sm:justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-xs sm:text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-xl"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={loading}
+              className="text-xs sm:text-sm font-semibold text-white bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+            >
+              {loading ? "Excluindo..." : "Excluir contrato"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ===================== TABELA “SOLTA” COM SCROLL E BORDAS RETAS ===================== */
 
-function ContractItemsTable({ items = [] }) {
+function ContractItemsTable({ items = [], onItemClick }) {
   const { sortedItems, totalGeral } = prepareContractItems(items);
 
   return (
     <div className="space-y-2 sm:space-y-3 mt-2 sm:mt-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm sm:text-base font-semibold text-gray-900">
-          Itens do contrato
-        </h2>
+        <div>
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">
+            Itens do contrato
+          </h2>
+          <p className="text-[11px] sm:text-xs text-gray-500">
+            Clique em um item para atualizar ou excluir.
+          </p>
+        </div>
         <span className="text-xs sm:text-sm text-gray-500">
           {sortedItems.length} itens
         </span>
       </div>
 
       <div className="w-full overflow-x-auto">
-        {/* Scroll vertical sem “card”, só a tabela */}
         <div
           className="
             max-h-80 sm:max-h-96 overflow-y-auto
@@ -572,7 +980,8 @@ function ContractItemsTable({ items = [] }) {
             {sortedItems.map((it, i) => (
               <tr
                 key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
-                className="bg-white odd:bg-white even:bg-gray-50"
+                className="bg-white odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-indigo-50/60 transition-colors"
+                onClick={() => onItemClick?.(it)}
               >
                 <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
                   {displayItemNo(it, i)}

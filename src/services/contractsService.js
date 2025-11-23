@@ -41,3 +41,9 @@ export async function updateContractItem(contractId, payload) {
   const res = await http.put(`/contracts/${contractId}/items`, payload);
   return res.data;
 }
+
+// NOVO: deletar item do contrato pelo ID
+export async function deleteContractItem(contractId, itemId) {
+  const res = await http.delete(`/contracts/${contractId}/items/${itemId}`);
+  return res.data;
+}
