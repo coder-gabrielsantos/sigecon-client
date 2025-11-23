@@ -109,7 +109,9 @@ export default function ContractDetailPage() {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
-        <p className="text-sm text-gray-500">Carregando contrato...</p>
+        <p className="text-xs sm:text-sm text-gray-500">
+          Carregando contrato...
+        </p>
       </div>
     );
   }
@@ -117,19 +119,22 @@ export default function ContractDetailPage() {
   if (!contract) {
     return (
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
-        <p className="text-sm text-red-600">Contrato não encontrado.</p>
+        <p className="text-xs sm:text-sm text-red-600">
+          Contrato não encontrado.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">
+    <div className="max-w-5xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 lg:space-y-8">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 leading-tight">
             Detalhes do contrato
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="mt-1 text-xs sm:text-sm text-gray-500 leading-relaxed">
             Atualize os dados principais, gerencie itens e acompanhe o saldo
             disponível.
           </p>
@@ -137,7 +142,7 @@ export default function ContractDetailPage() {
         <button
           type="button"
           onClick={() => navigate("/contracts")}
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-gray-200 hover:bg-gray-50 self-start"
         >
           Voltar para a lista
         </button>
@@ -149,68 +154,72 @@ export default function ContractDetailPage() {
       {/* Formulário de dados gerais */}
       <form
         onSubmit={handleSave}
-        className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4"
+        className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-3 sm:p-5 space-y-4"
       >
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="text-xs sm:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">
               Número do contrato
             </label>
             <input
               type="text"
               value={contract.number || ""}
               onChange={(e) => handleChange("number", e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">
               Fornecedor
             </label>
             <input
               type="text"
               value={contract.supplier || ""}
               onChange={(e) => handleChange("supplier", e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">
               Início
             </label>
             <input
               type="date"
               value={contract.startDate || ""}
               onChange={(e) => handleChange("startDate", e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">
               Fim
             </label>
             <input
               type="date"
               value={contract.endDate || ""}
               onChange={(e) => handleChange("endDate", e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 mt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2">
           <button
             type="button"
             onClick={handleDelete}
             disabled={removing}
-            className="text-sm text-red-600 hover:text-red-700 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 disabled:opacity-60"
+            className="text-xs sm:text-sm text-red-600 hover:text-red-700 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 disabled:opacity-60 w-full sm:w-auto text-center"
           >
             {removing ? "Excluindo..." : "Excluir contrato"}
           </button>
@@ -218,7 +227,7 @@ export default function ContractDetailPage() {
           <button
             type="submit"
             disabled={saving}
-            className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+            className="text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60 w-full sm:w-auto"
           >
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>
@@ -228,7 +237,7 @@ export default function ContractDetailPage() {
       {/* Form para adicionar/atualizar item */}
       <ContractItemForm contractId={id} onUpdated={handleItemsUpdated}/>
 
-      {/* Tabela de itens */}
+      {/* Tabela “solta” no final da página */}
       <ContractItemsTable items={contract.items}/>
     </div>
   );
@@ -250,47 +259,46 @@ function ContractFinancialSummary({ contract }) {
     remainingRaw != null ? num(remainingRaw) ?? 0 : total - used;
 
   return (
-    <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-3 sm:p-5 space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">
             Resumo financeiro
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500">
             Visão geral do valor contratado, uso e saldo disponível.
           </p>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col sm:flex-row sm:items-center">
-        <div className="flex-1 space-y-1 text-left">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+      <div className="mt-1 flex flex-col sm:flex-row sm:items-center sm:divide-x sm:divide-gray-200">
+        <div className="flex-1 space-y-1 text-left pb-2 sm:pb-0 sm:pr-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
             Valor total do contrato
           </p>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm sm:text-base font-semibold text-gray-900">
             {fmtMoney(total)}
           </p>
         </div>
 
-        <div className="flex-1 mt-3 sm:mt-0 space-y-1 text-center">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <div className="flex-1 space-y-1 text-left sm:text-center py-2 sm:px-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
             Valor utilizado
           </p>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm sm:text-base font-semibold text-gray-900">
             {fmtMoney(used)}
           </p>
         </div>
 
-        <div className="flex-1 mt-3 sm:mt-0 space-y-1 text-right">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <div className="flex-1 space-y-1 text-left sm:text-right pt-2 sm:pt-0 sm:pl-4">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
             Saldo restante
           </p>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm sm:text-base font-semibold text-gray-900">
             {fmtMoney(remaining)}
           </p>
         </div>
       </div>
-
     </section>
   );
 }
@@ -393,13 +401,13 @@ function ContractItemForm({ contractId, onUpdated }) {
   };
 
   return (
-    <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-gray-900">
+    <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-3 sm:p-5 space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
+        <div className="min-w-0">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">
             Itens do contrato — adicionar ou atualizar
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="mt-1 text-xs sm:text-sm text-gray-500">
             Para atualizar, informe o número do item. Para adicionar um novo,
             deixe o campo de número em branco.
           </p>
@@ -411,20 +419,22 @@ function ContractItemForm({ contractId, onUpdated }) {
         <div className="grid gap-3 sm:grid-cols-12">
           {/* Nº do item (compacto) */}
           <div className="space-y-1 sm:col-span-1">
-            <label className="text-xs font-medium text-gray-600">Item</label>
+            <label className="text-[11px] sm:text-xs font-medium text-gray-600">
+              Item
+            </label>
             <input
               type="number"
               min={1}
               value={itemNo}
               onChange={(e) => setItemNo(e.target.value)}
               placeholder=""
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Descrição (larga) */}
           <div className="space-y-1 sm:col-span-5">
-            <label className="text-xs font-medium text-gray-600">
+            <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               Descrição
             </label>
             <input
@@ -433,13 +443,13 @@ function ContractItemForm({ contractId, onUpdated }) {
               value={form.description}
               onChange={handleChange}
               placeholder="Ex: Tubo PVC soldável 50mm..."
-              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Unidade (compacto) */}
           <div className="space-y-1 sm:col-span-1">
-            <label className="text-xs font-medium text-gray-600">
+            <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               Unidade
             </label>
             <input
@@ -448,13 +458,13 @@ function ContractItemForm({ contractId, onUpdated }) {
               value={form.unit}
               onChange={handleChange}
               placeholder="UN, CJ"
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* Quantidade (compacto) */}
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-xs font-medium text-gray-600">
+            <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               Quantidade
             </label>
             <input
@@ -463,13 +473,13 @@ function ContractItemForm({ contractId, onUpdated }) {
               value={form.quantity}
               onChange={handleChange}
               placeholder="Ex: 100"
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {/* V. unitário (compacto) */}
           <div className="space-y-1 sm:col-span-3">
-            <label className="text-xs font-medium text-gray-600">
+            <label className="text-[11px] sm:text-xs font-medium text-gray-600">
               V. unitário
             </label>
             <input
@@ -478,28 +488,28 @@ function ContractItemForm({ contractId, onUpdated }) {
               value={form.unitPrice}
               onChange={handleChange}
               placeholder="Ex: 1234,56"
-              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-gray-300 px-2.5 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </div>
 
         {error && (
-          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <p className="text-xs sm:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             {error}
           </p>
         )}
         {success && (
-          <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <p className="text-xs sm:text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
             {success}
           </p>
         )}
 
-        {/* Botão embaixo, alinhado à direita, igual ao "Salvar alterações" */}
+        {/* Botão embaixo, alinhado à direita */}
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={loading}
-            className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+            className="text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60 w-full sm:w-auto"
           >
             {loading ? "Salvando item..." : "Salvar item"}
           </button>
@@ -509,77 +519,100 @@ function ContractItemForm({ contractId, onUpdated }) {
   );
 }
 
-/* ===================== TABELA DE ITENS ===================== */
+/* ===================== TABELA “SOLTA” COM SCROLL E BORDAS RETAS ===================== */
 
 function ContractItemsTable({ items = [] }) {
   const { sortedItems, totalGeral } = prepareContractItems(items);
 
   return (
-    <section className="bg-white rounded-2xl ring-1 ring-gray-200 shadow-sm p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-gray-900">
+    <div className="space-y-2 sm:space-y-3 mt-2 sm:mt-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm sm:text-base font-semibold text-gray-900">
           Itens do contrato
         </h2>
-        <span className="text-sm text-gray-500">
+        <span className="text-xs sm:text-sm text-gray-500">
           {sortedItems.length} itens
         </span>
       </div>
 
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full text-sm border-separate border-spacing-y-2">
-          <thead className="bg-indigo-50 text-indigo-700 uppercase text-xs">
-          <tr>
-            <th className="px-3 py-3 text-left">Item</th>
-            <th className="px-3 py-3 text-left">Descrição</th>
-            <th className="px-3 py-3 text-left">Unid.</th>
-            <th className="px-3 py-3 text-right">Qtd</th>
-            <th className="px-3 py-3 text-right">V. Unit.</th>
-            <th className="px-3 py-3 text-right">V. Total</th>
-          </tr>
-          </thead>
+        {/* Scroll vertical sem “card”, só a tabela */}
+        <div
+          className="
+            max-h-80 sm:max-h-96 overflow-y-auto
+            scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
+            hover:scrollbar-thumb-gray-400
+          "
+        >
+          <table className="min-w-full text-[11px] sm:text-sm border border-gray-200 border-collapse">
+            <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-10">
+            <tr>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                Item
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                Descrição
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                Unid.
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+                Qtd
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+                V. Unit.
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+                V. Total
+              </th>
+            </tr>
+            </thead>
 
-          <tbody>
-          {sortedItems.map((it, i) => (
-            <tr
-              key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
-              className="bg-white even:bg-gray-50"
-            >
-              <td className="px-3 py-3 rounded-l-xl text-gray-700">
-                {displayItemNo(it, i)}
+            <tbody>
+            {sortedItems.map((it, i) => (
+              <tr
+                key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
+                className="bg-white odd:bg-white even:bg-gray-50"
+              >
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                  {displayItemNo(it, i)}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 max-w-[220px] sm:max-w-[320px] whitespace-nowrap overflow-hidden text-ellipsis border-b border-gray-100">
+                  {it.description}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                  {it.unit}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums text-gray-700 whitespace-nowrap border-b border-gray-100">
+                  {fmtNum(it.quantity)}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums text-gray-700 whitespace-nowrap border-b border-gray-100">
+                  {fmtMoney(it.unitPrice ?? it.unit_price)}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
+                  {fmtMoney(it.totalPrice ?? it.total_price)}
+                </td>
+              </tr>
+            ))}
+            </tbody>
+
+            <tfoot>
+            <tr className="bg-white">
+              <td
+                className="px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-sm text-gray-600"
+                colSpan={5}
+              >
+                Total dos itens
               </td>
-              <td className="px-3 py-2 text-gray-800 max-w-[320px] whitespace-nowrap overflow-hidden text-ellipsis">
-                {it.description}
-              </td>
-              <td className="px-3 py-3 text-gray-700">{it.unit}</td>
-              <td className="px-3 py-3 text-right tabular-nums text-gray-700">
-                {fmtNum(it.quantity)}
-              </td>
-              <td className="px-3 py-3 text-right tabular-nums text-gray-700">
-                {fmtMoney(it.unitPrice ?? it.unit_price)}
-              </td>
-              <td className="px-3 py-3 text-right tabular-nums rounded-r-xl font-medium text-gray-900">
-                {fmtMoney(it.totalPrice ?? it.total_price)}
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right font-semibold text-gray-900">
+                {fmtMoney(totalGeral)}
               </td>
             </tr>
-          ))}
-          </tbody>
-
-          <tfoot>
-          <tr className="bg-white">
-            <td
-              className="px-3 py-3 text-gray-600 rounded-l-xl"
-              colSpan={5}
-            >
-              Total dos itens
-            </td>
-            <td className="px-3 py-3 text-right rounded-r-xl font-semibold text-gray-900">
-              {fmtMoney(totalGeral)}
-            </td>
-          </tr>
-          </tfoot>
-        </table>
+            </tfoot>
+          </table>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
 

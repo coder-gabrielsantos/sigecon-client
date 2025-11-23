@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Button from "../../components/ui/Button";
 import {
   getOrderById,
   downloadOrderXlsx,
@@ -193,7 +192,7 @@ export default function OrderDetailPage() {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
-        <p className="text-sm text-gray-500">Carregando ordem.</p>
+        <p className="text-xs sm:text-sm text-gray-500">Carregando ordem...</p>
       </div>
     );
   }
@@ -202,13 +201,13 @@ export default function OrderDetailPage() {
     return (
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-3">
         {error && (
-          <p className="text-sm text-red-600">
+          <p className="text-xs sm:text-sm text-red-600">
             {error || "Ordem não encontrada."}
           </p>
         )}
         <button
           onClick={() => navigate("/orders")}
-          className="text-sm text-indigo-600 hover:text-indigo-500"
+          className="text-xs sm:text-sm text-indigo-600 hover:text-indigo-500"
         >
           Voltar para ordens
         </button>
@@ -217,18 +216,18 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header principal */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="space-y-1">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
             Ordem vinculada a contrato
           </p>
-          <h1 className="text-lg font-semibold text-gray-900">
+          <h1 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900">
             {order.orderType || "Ordem"} nº {order.orderNumber || order.id}
           </h1>
           {order.issueDate && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500">
               Data da emissão:{" "}
               <span className="font-medium text-gray-700">
                 {order.issueDate}
@@ -238,19 +237,31 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <Button type="button" onClick={handleDownloadXlsx}>
+          <button
+            type="button"
+            onClick={handleDownloadXlsx}
+            className="text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-500 hover:border-indigo-500 self-start"
+          >
             Baixar planilha
-          </Button>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/orders")}
+            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-gray-200 hover:bg-gray-50 self-start"
+          >
+            Voltar
+          </button>
         </div>
       </header>
 
       {/* Form para preencher campos do XLSX */}
-      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-5">
+      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-3 sm:p-5 space-y-4 sm:space-y-5">
         <div className="space-y-1">
-          <h2 className="text-base font-semibold text-gray-900">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">
             Dados para geração da planilha
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500">
             Esses campos serão escritos diretamente no modelo XLSX antes do
             download. Você pode ajustar os textos conforme precisar.
           </p>
@@ -258,92 +269,92 @@ export default function OrderDetailPage() {
 
         {/* Tipo de ordem */}
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-gray-700">
+          <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
             Tipo de ordem
           </label>
           <input
             type="text"
             value={xlsxExtras.orderTypeText}
             onChange={(e) => handleChange("orderTypeText", e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
 
         {/* De / Para */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-700">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
               De
             </label>
             <input
               type="text"
               value={xlsxExtras.deText}
               onChange={(e) => handleChange("deText", e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-700">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
               Para
             </label>
             <input
               type="text"
               value={xlsxExtras.paraText}
               onChange={(e) => handleChange("paraText", e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
         </div>
 
         {/* Nome / extra / endereço */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-700">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
               Nome / Razão Social
             </label>
             <input
               type="text"
               value={xlsxExtras.nomeRazao}
               onChange={(e) => handleChange("nomeRazao", e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-700">
+            <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
               Texto extra (ex.: informação do contrato)
             </label>
             <input
               type="text"
               value={xlsxExtras.celularTexto}
               onChange={(e) => handleChange("celularTexto", e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
         </div>
 
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-gray-700">
+          <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
             Endereço
           </label>
           <input
             type="text"
             value={xlsxExtras.endereco}
             onChange={(e) => handleChange("endereco", e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
 
         {/* Seleções */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-700">
+            <p className="text-[11px] sm:text-xs font-medium text-gray-700">
               Tipos de despesa
             </p>
             <div className="space-y-1.5">
               {EXPENSE_OPTIONS.map((opt) => (
                 <label
                   key={opt}
-                  className="flex items-center gap-2 text-xs text-gray-700"
+                  className="flex items-center gap-2 text-[11px] sm:text-xs text-gray-700"
                 >
                   <input
                     type="checkbox"
@@ -358,14 +369,14 @@ export default function OrderDetailPage() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-700">
+            <p className="text-[11px] sm:text-xs font-medium text-gray-700">
               Modalidades de licitação
             </p>
             <div className="space-y-1.5">
               {MODALITY_OPTIONS.map((opt) => (
                 <label
                   key={opt}
-                  className="flex items-center gap-2 text-xs text-gray-700"
+                  className="flex items-center gap-2 text-[11px] sm:text-xs text-gray-700"
                 >
                   <input
                     type="checkbox"
@@ -382,7 +393,7 @@ export default function OrderDetailPage() {
 
         {/* Justificativa */}
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-gray-700">
+          <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
             Justificativa / Finalidade / Período de Referência
           </label>
           <textarea
@@ -391,121 +402,167 @@ export default function OrderDetailPage() {
             onChange={(e) =>
               handleChange("justificativaCampo", e.target.value)
             }
-            className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
       </section>
 
       {/* Bloco do contrato / resumo ordem */}
-      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-5 sm:p-6 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-3">
+      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-3 sm:p-5 space-y-4">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
               Contrato
             </p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs sm:text-sm font-semibold text-gray-900">
               {contract?.number || "—"}
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
               Fornecedor
             </p>
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-xs sm:text-sm font-medium text-gray-900">
               {contract?.supplier || "—"}
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
               Total da ordem
             </p>
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-sm sm:text-lg font-semibold text-gray-900">
               {formatMoneyBRL(order.totalAmount)}
             </p>
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-4 space-y-1">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <div className="border-t border-gray-100 pt-3 sm:pt-4 space-y-1">
+          <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
             Finalidade / Justificativa (dados originais da ordem)
           </p>
-          <p className="text-sm text-gray-800">
+          <p className="text-xs sm:text-sm text-gray-800">
             {order.justification || "—"}
           </p>
         </div>
       </section>
 
-      {/* Itens da ordem */}
-      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200">
-        <div className="px-4 py-4 border-b border-gray-200">
-          <p className="text-base font-semibold text-gray-900">
-            Itens desta ordem
-          </p>
-          <p className="text-sm text-gray-500">
-            Baseado nos itens do contrato selecionado.
-          </p>
-        </div>
-
-        {order.items.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-gray-500">
-            Nenhum item vinculado a esta ordem.
-          </div>
-        ) : (
-          <div className="border border-gray-200 bg-gray-50 max-h-72 overflow-y-auto overflow-x-auto m-4 mt-0">
-            <table className="min-w-[900px] text-sm">
-              <thead>
-              <tr className="bg-gray-100 text-xs text-gray-600 uppercase tracking-wide sticky top-0 z-10">
-                <th className="px-3 py-2 text-left font-medium">Item</th>
-                <th className="px-3 py-2 text-left font-medium">
-                  Descrição
-                </th>
-                <th className="px-3 py-2 text-left font-medium whitespace-nowrap">
-                  Unid.
-                </th>
-                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
-                  Quant.
-                </th>
-                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
-                  V. unitário
-                </th>
-                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
-                  V. total
-                </th>
-              </tr>
-              </thead>
-              <tbody>
-              {order.items.map((it) => (
-                <tr
-                  key={it.id}
-                  className="border-t border-gray-200 bg-white"
-                >
-                  <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                    {it.itemNo ?? "-"}
-                  </td>
-                  <td className="px-3 py-2">
-                      <span className="font-medium text-gray-800">
-                        {it.description}
-                      </span>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                    {it.unit || "—"}
-                  </td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap text-gray-700">
-                    {it.quantity}
-                  </td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap text-gray-700">
-                    {formatMoneyBRL(it.unitPrice)}
-                  </td>
-                  <td className="px-3 py-2 text-right whitespace-nowrap font-medium text-gray-900">
-                    {formatMoneyBRL(it.totalPrice)}
-                  </td>
-                </tr>
-              ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {/* Itens da ordem - padrão igual ao ContractDetailPage */}
+      <OrderItemsTable items={order.items}/>
     </div>
+  );
+}
+
+/* ===================== TABELA “SOLTA” COM SCROLL E BORDAS RETAS ===================== */
+
+function OrderItemsTable({ items = [] }) {
+  if (!items.length) {
+    return (
+      <section className="mt-2 sm:mt-3">
+        <div className="flex items-center justify-between mb-1 sm:mb-2">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">
+            Itens desta ordem
+          </h2>
+          <span className="text-xs sm:text-sm text-gray-500">0 itens</span>
+        </div>
+        <p className="text-xs sm:text-sm text-gray-500">
+          Nenhum item vinculado a esta ordem.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-2 sm:space-y-3 mt-2 sm:mt-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm sm:text-base font-semibold text-gray-900">
+          Itens desta ordem
+        </h2>
+        <span className="text-xs sm:text-sm text-gray-500">
+          {items.length} itens
+        </span>
+      </div>
+
+      <div className="w-full overflow-x-auto">
+        {/* Scroll vertical sem card, só a tabela */}
+        <div
+          className="
+            max-h-80 sm:max-h-96 overflow-y-auto
+            scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
+            hover:scrollbar-thumb-gray-400
+          "
+        >
+          <table className="min-w-[760px] text-[11px] sm:text-sm border border-gray-200 border-collapse">
+            <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-10">
+            <tr>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                Item
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                Descrição
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200 whitespace-nowrap">
+                Unid.
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
+                Quant.
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
+                V. unitário
+              </th>
+              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
+                V. total
+              </th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {items.map((it) => (
+              <tr
+                key={it.id}
+                className="bg-white odd:bg-white even:bg-gray-50"
+              >
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                  {it.itemNo ?? "-"}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 border-b border-gray-100">
+                    <span className="font-medium text-gray-800">
+                      {it.description}
+                    </span>
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 whitespace-nowrap text-gray-700 border-b border-gray-100">
+                  {it.unit || "—"}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap text-gray-700 border-b border-gray-100">
+                  {it.quantity}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap text-gray-700 border-b border-gray-100">
+                  {formatMoneyBRL(it.unitPrice)}
+                </td>
+                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap font-medium text-gray-900 border-b border-gray-100">
+                  {formatMoneyBRL(it.totalPrice)}
+                </td>
+              </tr>
+            ))}
+            </tbody>
+
+            <tfoot>
+            <tr className="bg-white">
+              <td
+                className="px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-sm text-gray-600"
+                colSpan={5}
+              >
+                Total dos itens
+              </td>
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right font-semibold text-gray-900">
+                {formatMoneyBRL(
+                  items.reduce((acc, it) => acc + (it.totalPrice || 0), 0)
+                )}
+              </td>
+            </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
   );
 }
