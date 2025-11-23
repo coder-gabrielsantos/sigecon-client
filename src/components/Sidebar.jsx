@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, FileText, BarChart3, LogOut } from "lucide-react";
+import { FileText, ListOrdered, User, LogOut } from "lucide-react";
 import { clearSession } from "../services/authService";
 
 export default function Sidebar() {
@@ -36,11 +36,11 @@ export default function Sidebar() {
         </SidebarLink>
 
         <SidebarLink to="/orders" label="Ordens">
-          <LayoutDashboard className="h-4 w-4"/>
+          <ListOrdered className="h-4 w-4"/>
         </SidebarLink>
 
         <SidebarLink to="/user" label="Usuário">
-          <BarChart3 className="h-4 w-4"/>
+          <User className="h-4 w-4"/>
         </SidebarLink>
       </nav>
 
