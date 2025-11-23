@@ -188,7 +188,9 @@ export default function UserPage() {
           user.nome = updatedProfile?.nome || novoNome;
           localStorage.setItem("sigecon_user", JSON.stringify(user));
         }
-      } catch (_) {}
+        // eslint-disable-next-line no-unused-vars
+      } catch (_) {
+      }
 
       setTimeout(() => setNameMessage(""), 2500);
     } catch (err) {
@@ -335,7 +337,7 @@ export default function UserPage() {
         {/* topo: avatar + resumo */}
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center text-sm font-semibold shadow-md">
-            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6" />}
+            {getInitials(profile?.nome) || <UserIcon className="h-6 w-6"/>}
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900">Meu perfil</p>
@@ -366,37 +368,6 @@ export default function UserPage() {
                 </p>
                 <p className="text-gray-900">{formatCPF(profile.cpf)}</p>
               </div>
-
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Perfil
-                </p>
-                <span className="inline-flex items-center rounded bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
-                  {profile.role}
-                </span>
-              </div>
-
-              {typeof profile.ativo !== "undefined" && (
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    Status
-                  </p>
-                  <span
-                    className={`inline-flex items-center rounded px-2.5 py-1 text-xs font-medium ${
-                      profile.ativo
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-red-50 text-red-700"
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full mr-1.5 ${
-                        profile.ativo ? "bg-emerald-500" : "bg-red-500"
-                      }`}
-                    />
-                    {profile.ativo ? "Ativo" : "Inativo"}
-                  </span>
-                </div>
-              )}
             </div>
           ) : (
             <p className="text-sm text-gray-500">
@@ -417,7 +388,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-gray-500" />
+              <UserIcon className="h-4 w-4 text-gray-500"/>
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Nome exibido
               </p>
@@ -455,7 +426,7 @@ export default function UserPage() {
             className="space-y-3 bg-gray-50 rounded-xl px-3 py-3 sm:px-4 sm:py-4"
           >
             <div className="flex items-center gap-2">
-              <LockKeyhole className="h-4 w-4 text-gray-500" />
+              <LockKeyhole className="h-4 w-4 text-gray-500"/>
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Alterar senha
               </p>
@@ -532,7 +503,7 @@ export default function UserPage() {
             </p>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 uppercase tracking-wide">
-            <Shield className="h-3 w-3" />
+            <Shield className="h-3 w-3"/>
             {isAdmin ? "ADMIN" : ""}
           </span>
         </div>
@@ -624,10 +595,6 @@ export default function UserPage() {
                     Operador
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Administradores gerenciam usuários e configurações. Operadores
-                  utilizam o sistema no dia a dia.
-                </p>
               </div>
 
               {/* Feedback criação */}

@@ -56,7 +56,7 @@ export default function DashboardLayout() {
               <Menu className="h-5 w-5"/>
             </button>
 
-            <div className="leading-tight">
+            <div className="leading-tight hidden sm:block">
               <p className="text-xs font-medium text-gray-700 leading-tight truncate">
                 PREFEITURA MUNICIPAL DE COELHO NETO
               </p>
