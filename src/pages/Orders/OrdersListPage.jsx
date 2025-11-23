@@ -621,7 +621,15 @@ export default function OrdersListPage() {
             <button
               type="submit"
               disabled={creating || !selectedContract}
-              className={`${smallButtonClasses} bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed`}
+              className="
+                inline-flex items-center justify-center gap-1.5 sm:gap-2
+                rounded-xl px-3 py-2 sm:py-2.5
+                text-xs sm:text-sm font-semibold
+                text-white bg-indigo-600 hover:bg-indigo-500
+                shadow-sm shadow-indigo-600/30
+                w-full sm:w-auto
+                disabled:opacity-60 disabled:cursor-not-allowed
+              "
             >
               {creating ? "Emitindo..." : "Emitir ordem"}
             </button>
