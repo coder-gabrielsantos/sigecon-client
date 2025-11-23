@@ -510,97 +510,94 @@ export default function OrdersListPage() {
             {selectedContract &&
               !itemsLoading &&
               contractItems.length > 0 && (
-                <div className="w-full overflow-x-auto">
-                  <div
-                    className="
-                      max-h-80 sm:max-h-96 overflow-y-auto
-                      scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
-                      hover:scrollbar-thumb-gray-400
-                    "
-                  >
-                    <table className="min-w-[900px] text-[11px] sm:text-sm border border-gray-200 border-collapse">
-                      <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-10">
-                      <tr>
-                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                          Item
-                        </th>
-                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                          Descrição
-                        </th>
-                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
-                          Qtd disponível
-                        </th>
-                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
-                          Qtd p/ ordem
-                        </th>
-                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
-                          V. unit.
-                        </th>
-                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
-                          V. total (ordem)
-                        </th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      {contractItems
-                        .filter(
-                          (it) => (it.description || "").trim() !== ""
-                        )
-                        .map((it) => {
-                          const qStr = itemsQuantities[it.id] || "";
-                          const numeric = Number(
-                            qStr
-                              .toString()
-                              .replace(/\./g, "")
-                              .replace(",", ".")
-                          );
-                          const lineTotal =
-                            !numeric || numeric <= 0
-                              ? 0
-                              : numeric * (it.unitPrice || 0);
+                <div
+                  className="
+                    w-full
+                    max-h-80 sm:max-h-96
+                    overflow-auto
+                    border border-gray-200
+                    scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
+                    hover:scrollbar-thumb-gray-400
+                  "
+                >
+                  <table className="min-w-[900px] text-[11px] sm:text-sm border-separate border-spacing-0">
+                    <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-20">
+                    <tr>
+                      <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                        Item
+                      </th>
+                      <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                        Descrição
+                      </th>
+                      <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
+                        Qtd disponível
+                      </th>
+                      {/* Qtd p/ ordem MAIS ESTREITA */}
+                      <th className="w-20 sm:w-24 px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
+                        Qtd p/ ordem
+                      </th>
+                      {/* V. total (ordem) COM MAIS ESPAÇO */}
+                      <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
+                        V. unit.
+                      </th>
+                      <th className="min-w-[120px] sm:min-w-[150px] px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200 whitespace-nowrap">
+                        V. total
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {contractItems
+                      .filter((it) => (it.description || "").trim() !== "")
+                      .map((it) => {
+                        const qStr = itemsQuantities[it.id] || "";
+                        const numeric = Number(
+                          qStr.toString().replace(/\./g, "").replace(",", ".")
+                        );
+                        const lineTotal =
+                          !numeric || numeric <= 0
+                            ? 0
+                            : numeric * (it.unitPrice || 0);
 
-                          return (
-                            <tr
-                              key={it.id}
-                              className="bg-white odd:bg-white even:bg-gray-50"
-                            >
-                              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                                {it.itemNo ?? "-"}
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 sm:py-2.5 border-b border-gray-100">
-                                  <span className="font-medium text-gray-800">
-                                    {it.description}
-                                  </span>
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-gray-700 whitespace-nowrap border-b border-gray-100">
-                                {it.availableQuantity}
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap border-b border-gray-100">
-                                <input
-                                  type="text"
-                                  className="w-full rounded-lg border border-gray-300 px-2 py-1 text-[11px] sm:text-sm text-right text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                  placeholder="0"
-                                  value={qStr}
-                                  onChange={(e) =>
-                                    handleItemQuantityChange(
-                                      it.id,
-                                      e.target.value
-                                    )
-                                  }
-                                />
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-gray-700 whitespace-nowrap border-b border-gray-100">
-                                {formatMoneyBRL(it.unitPrice)}
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
-                                {formatMoneyBRL(lineTotal)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                        return (
+                          <tr
+                            key={it.id}
+                            className="bg-white odd:bg-white even:bg-gray-50"
+                          >
+                            <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                              {it.itemNo ?? "-"}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 sm:py-2.5 border-b border-gray-100">
+                            <span className="font-medium text-gray-800">
+                              {it.description}
+                            </span>
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-gray-700 whitespace-nowrap border-b border-gray-100">
+                              {it.availableQuantity}
+                            </td>
+                            {/* TD da Qtd p/ ordem com menos espaço */}
+                            <td className="w-20 sm:w-24 px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap border-b border-gray-100">
+                              <input
+                                type="text"
+                                className="w-full rounded-lg border border-gray-300 px-2 py-1 text-[11px] sm:text-sm text-right text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                placeholder="0"
+                                value={qStr}
+                                onChange={(e) =>
+                                  handleItemQuantityChange(it.id, e.target.value)
+                                }
+                              />
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-gray-700 whitespace-nowrap border-b border-gray-100">
+                              {formatMoneyBRL(it.unitPrice)}
+                            </td>
+                            {/* TD da V. total (ordem) com mais espaço */}
+                            <td className="min-w-[120px] sm:min-w-[150px] px-2 sm:px-3 py-2 sm:py-2.5 text-right font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
+                              {formatMoneyBRL(lineTotal)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
           </div>
@@ -633,7 +630,7 @@ export default function OrdersListPage() {
       </section>
 
       {/* LISTA DE ORDENS */}
-      <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 mt-6">
+      <section className="bg-white rounded-t-2xl shadow-sm ring-1 ring-gray-200 mt-6">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <div className="space-y-1">
             <p className="text-sm sm:text-base font-semibold text-gray-900">
@@ -654,68 +651,69 @@ export default function OrdersListPage() {
             Nenhuma ordem emitida até o momento.
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <div
-              className="
-                max-h-80 sm:max-h-96 overflow-y-auto
-                scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
-                hover:scrollbar-thumb-gray-400
-              "
-            >
-              <table className="min-w-full text-[11px] sm:text-sm border border-gray-200 border-collapse">
-                <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-10">
-                <tr>
-                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                    Nº
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                    Tipo
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                    Contrato
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                    Fornecedor
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                    Data
-                  </th>
-                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
-                    V. Total
-                  </th>
-                </tr>
-                </thead>
+          <div
+            className="
+              w-full
+              max-h-80 sm:max-h-96
+              overflow-auto
+              border border-gray-200
+              scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
+              hover:scrollbar-thumb-gray-400
+            "
+          >
+            <table className="min-w-full text-[11px] sm:text-sm border-separate border-spacing-0">
+              <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-20">
+              <tr>
+                <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                  Nº
+                </th>
+                <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                  Tipo
+                </th>
+                <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                  Contrato
+                </th>
+                <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                  Fornecedor
+                </th>
+                <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                  Data
+                </th>
+                <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+                  V. Total
+                </th>
+              </tr>
+              </thead>
 
-                <tbody>
-                {orders.map((o) => (
-                  <tr
-                    key={o.id}
-                    className="bg-white odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-indigo-50/60 transition-colors"
-                    onClick={() => navigate(`/orders/${o.id}`)}
-                  >
-                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                      {o.numero}
-                    </td>
-                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 border-b border-gray-100">
-                      {o.tipo}
-                    </td>
-                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                      {o.contratoNumero}
-                    </td>
-                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                      {o.fornecedor}
-                    </td>
-                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                      {o.data}
-                    </td>
-                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
-                      {formatMoneyBRL(o.total)}
-                    </td>
-                  </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
+              <tbody>
+              {orders.map((o) => (
+                <tr
+                  key={o.id}
+                  className="bg-white odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-indigo-50/60 transition-colors"
+                  onClick={() => navigate(`/orders/${o.id}`)}
+                >
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                    {o.numero}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 border-b border-gray-100">
+                    {o.tipo}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                    {o.contratoNumero}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                    {o.fornecedor}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                    {o.data}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
+                    {formatMoneyBRL(o.total)}
+                  </td>
+                </tr>
+              ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

@@ -71,7 +71,9 @@ export default function ContractsListPage() {
             <p>
               {loading
                 ? "Carregando..."
-                : `${list.length} contrato${list.length === 1 ? ' listado' : 's listados'}`}{" "}
+                : `${list.length} contrato${
+                  list.length === 1 ? " listado" : "s listados"
+                }`}{" "}
             </p>
           </div>
 
@@ -107,9 +109,17 @@ export default function ContractsListPage() {
         )}
 
         {/* Tabela */}
-        <div className="w-full overflow-x-auto">
-          <table className="min-w-full text-left text-xs sm:text-sm">
-            <thead className="text-[11px] sm:text-xs uppercase font-medium bg-gray-50 border-b border-gray-200 text-gray-600">
+        <div
+          className="
+            w-full
+            max-h-[28rem]
+            overflow-auto
+            scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
+            hover:scrollbar-thumb-gray-400
+          "
+        >
+          <table className="min-w-full text-left text-xs sm:text-sm border-separate border-spacing-0">
+            <thead className="sticky top-0 z-10 bg-gray-50 text-[11px] sm:text-xs uppercase font-medium border-b border-gray-200 text-gray-600">
             <tr>
               <th className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                 Contrato
@@ -126,39 +136,30 @@ export default function ContractsListPage() {
               <th className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-right">
                 Saldo
               </th>
-              <th className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-right">
-                Status
-              </th>
             </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-100 text-gray-700">
-            {loading && (
-              <>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-3 py-2 sm:px-4 sm:py-3">
-                      <div className="h-3 bg-gray-200 rounded w-32 sm:w-40"/>
-                    </td>
-                    <td className="px-3 py-2 sm:px-4 sm:py-3">
-                      <div className="h-3 bg-gray-200 rounded w-40 sm:w-48"/>
-                    </td>
-                    <td className="px-3 py-2 sm:px-4 sm:py-3 text-right">
-                      <div className="h-3 bg-gray-200 rounded w-16 sm:w-20 ml-auto"/>
-                    </td>
-                    <td className="px-3 py-2 sm:px-4 sm:py-3 text-right">
-                      <div className="h-3 bg-gray-200 rounded w-16 sm:w-20 ml-auto"/>
-                    </td>
-                    <td className="px-3 py-2 sm:px-4 sm:py-3 text-right">
-                      <div className="h-3 bg-gray-200 rounded w-16 sm:w-20 ml-auto"/>
-                    </td>
-                    <td className="px-3 py-2 sm:px-4 sm:py-3 text-right">
-                      <div className="h-5 bg-gray-200 rounded w-20 sm:w-24 ml-auto"/>
-                    </td>
-                  </tr>
-                ))}
-              </>
-            )}
+            <tbody className="text-gray-700">
+            {loading &&
+              Array.from({ length: 3 }).map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="px-3 py-2 sm:px-4 sm:py-3">
+                    <div className="h-3 bg-gray-200 rounded w-32 sm:w-40"/>
+                  </td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3">
+                    <div className="h-3 bg-gray-200 rounded w-40 sm:w-48"/>
+                  </td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-right">
+                    <div className="h-3 bg-gray-200 rounded w-16 sm:w-20 ml-auto"/>
+                  </td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-right">
+                    <div className="h-3 bg-gray-200 rounded w-16 sm:w-20 ml-auto"/>
+                  </td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-right">
+                    <div className="h-3 bg-gray-200 rounded w-16 sm:w-20 ml-auto"/>
+                  </td>
+                </tr>
+              ))}
 
             {!loading &&
               list.map((c, idx) => (
@@ -182,9 +183,6 @@ export default function ContractsListPage() {
                   <td className="px-3 py-2 sm:px-4 sm:py-3 font-medium text-gray-900 text-right whitespace-nowrap text-xs sm:text-sm">
                     {formatCurrency(c.saldoRestante)}
                   </td>
-                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-right whitespace-nowrap text-xs sm:text-sm">
-                    <StatusPill status={c.status}/>
-                  </td>
                 </tr>
               ))}
 
@@ -192,7 +190,7 @@ export default function ContractsListPage() {
               <tr>
                 <td
                   className="px-3 sm:px-4 py-8 sm:py-10 text-center text-xs sm:text-sm text-gray-500"
-                  colSpan={6}
+                  colSpan={5}
                 >
                   Nenhum contrato encontrado.
                 </td>
@@ -210,12 +208,9 @@ export default function ContractsListPage() {
         onUploaded={(contract) => {
           setUploadOpen(false);
 
-          // se o backend retornar o contrato recém-criado,
-          // já redirecionamos para a tela de detalhes:
           if (contract && contract.id) {
             navigate(`/contracts/${contract.id}`);
           } else {
-            // fallback: só recarrega a lista
             reload();
           }
         }}
@@ -234,12 +229,6 @@ function normalizeSummaryFromApi(api) {
     api.remainingAmount ?? valorTotal - valorUsado
   );
 
-  let status = "OK";
-  if (valorTotal > 0) {
-    if (saldoRestante <= 0) status = "ENCERRADO";
-    else if (saldoRestante / valorTotal <= 0.1) status = "BAIXO";
-  }
-
   return {
     id: api.id,
     numero,
@@ -247,36 +236,7 @@ function normalizeSummaryFromApi(api) {
     valorTotal,
     valorUsado,
     saldoRestante,
-    status,
   };
-}
-
-function StatusPill({ status }) {
-  const base =
-    "inline-flex items-center justify-center rounded-lg px-2 py-1.5 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-xs font-medium ring-1 min-w-[90px] sm:min-w-[110px] text-center";
-  if (status === "OK")
-    return (
-      <span className={base + " bg-emerald-50 text-emerald-700 ring-emerald-200"}>
-        OK
-      </span>
-    );
-  if (status === "BAIXO")
-    return (
-      <span className={base + " bg-amber-50 text-amber-700 ring-amber-200"}>
-        Saldo baixo
-      </span>
-    );
-  if (status === "ENCERRADO")
-    return (
-      <span className={base + " bg-red-50 text-red-700 ring-red-200"}>
-        Encerrado
-      </span>
-    );
-  return (
-    <span className={base + " bg-gray-100 text-gray-700 ring-gray-200"}>
-      {status || "OK"}
-    </span>
-  );
 }
 
 function formatCurrency(v) {

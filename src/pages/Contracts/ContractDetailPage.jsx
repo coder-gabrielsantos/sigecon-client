@@ -944,82 +944,84 @@ function ContractItemsTable({ items = [], onItemClick }) {
         </span>
       </div>
 
-      <div className="w-full overflow-x-auto">
-        <div
-          className="
-            max-h-80 sm:max-h-96 overflow-y-auto
-            scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
-            hover:scrollbar-thumb-gray-400
-          "
-        >
-          <table className="min-w-full text-[11px] sm:text-sm border border-gray-200 border-collapse">
-            <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-10">
-            <tr>
-              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                Item
-              </th>
-              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                Descrição
-              </th>
-              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
-                Unid.
-              </th>
-              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
-                Qtd
-              </th>
-              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
-                V. Unit.
-              </th>
-              <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
-                V. Total
-              </th>
-            </tr>
-            </thead>
+      {/* container ÚNICO com scroll + borda em volta da lista */}
+      <div
+        className="
+          w-full
+          max-h-80 sm:max-h-96
+          overflow-auto
+          border border-gray-200
+          scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
+          hover:scrollbar-thumb-gray-400
+        "
+      >
+        <table className="min-w-full text-[11px] sm:text-sm border-separate border-spacing-0">
+          <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-20">
+          <tr>
+            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+              Item
+            </th>
+            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+              Descrição
+            </th>
+            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+              Unid.
+            </th>
+            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+              Qtd
+            </th>
+            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+              V. Unit.
+            </th>
+            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+              V. Total
+            </th>
+          </tr>
+          </thead>
 
-            <tbody>
-            {sortedItems.map((it, i) => (
-              <tr
-                key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
-                className="bg-white odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-indigo-50/60 transition-colors"
-                onClick={() => onItemClick?.(it)}
-              >
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                  {displayItemNo(it, i)}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 max-w-[220px] sm:max-w-[320px] whitespace-nowrap overflow-hidden text-ellipsis border-b border-gray-100">
-                  {it.description}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                  {it.unit}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums text-gray-700 whitespace-nowrap border-b border-gray-100">
-                  {fmtNum(it.quantity)}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums text-gray-700 whitespace-nowrap border-b border-gray-100">
-                  {fmtMoney(it.unitPrice ?? it.unit_price)}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
-                  {fmtMoney(it.totalPrice ?? it.total_price)}
-                </td>
-              </tr>
-            ))}
-            </tbody>
-
-            <tfoot>
-            <tr className="bg-white">
-              <td
-                className="px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-sm text-gray-600"
-                colSpan={5}
-              >
-                Total dos itens
+          <tbody>
+          {sortedItems.map((it, i) => (
+            <tr
+              key={it.id ?? `${i}-${it.itemNo ?? it.item_no ?? ""}`}
+              className="bg-white odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-indigo-50/60 transition-colors"
+              onClick={() => onItemClick?.(it)}
+            >
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                {displayItemNo(it, i)}
               </td>
-              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right font-semibold text-gray-900">
-                {fmtMoney(totalGeral)}
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 max-w-[220px] sm:max-w-[320px] whitespace-nowrap overflow-hidden text-ellipsis border-b border-gray-100">
+                {it.description}
+              </td>
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                {it.unit}
+              </td>
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums text-gray-700 whitespace-nowrap border-b border-gray-100">
+                {fmtNum(it.quantity)}
+              </td>
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums text-gray-700 whitespace-nowrap border-b border-gray-100">
+                {fmtMoney(it.unitPrice ?? it.unit_price)}
+              </td>
+              <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
+                {fmtMoney(it.totalPrice ?? it.total_price)}
               </td>
             </tr>
-            </tfoot>
-          </table>
-        </div>
+          ))}
+          </tbody>
+
+          <tfoot>
+          <tr className="bg-white">
+            <td
+              className="px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-sm text-gray-600"
+              colSpan={5}
+            >
+              Total dos itens
+            </td>
+            <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right font-semibold text-gray-900">
+              {fmtMoney(totalGeral)}
+            </td>
+          </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );
