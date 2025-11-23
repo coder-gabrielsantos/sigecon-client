@@ -90,7 +90,7 @@ export default function OrdersListPage() {
             numero: o.orderNumber || `Ordem #${o.id}`,
             tipo: o.orderType,
             contratoNumero: o.contractNumber,
-            fornecedor: o.contractSupplier,
+            fornecedor: o.supplier,
             data: o.issueDate
               ? new Date(o.issueDate).toLocaleDateString("pt-BR")
               : "—",
@@ -643,50 +643,80 @@ export default function OrdersListPage() {
               Histórico das ordens geradas a partir dos contratos.
             </p>
           </div>
-
         </div>
 
         {loadingOrders ? (
-          <div className="px-4 py-4 text-xs text-gray-500">
+          <div className="px-4 py-4 text-xs sm:text-sm text-gray-500">
             Carregando ordens...
           </div>
         ) : orders.length === 0 ? (
-          <div className="px-4 py-4 text-xs text-gray-500">
+          <div className="px-4 py-4 text-xs sm:text-sm text-gray-500">
             Nenhuma ordem emitida até o momento.
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-            <tr className="bg-indigo-50 text-indigo-700 uppercase text-[11px]">
-              <th className="px-3 py-2 text-left">Nº</th>
-              <th className="px-3 py-2 text-left">Tipo</th>
-              <th className="px-3 py-2 text-left">Contrato</th>
-              <th className="px-3 py-2 text-left">Fornecedor</th>
-              <th className="px-3 py-2 text-left">Data</th>
-              <th className="px-3 py-2 text-right">Valor total</th>
-            </tr>
-            </thead>
-            <tbody>
-            {orders.map((o) => (
-              <tr
-                key={o.id}
-                className="hover:bg-gray-50 cursor-pointer"
-                onClick={() => navigate(`/orders/${o.id}`)}
-              >
-                <td className="px-3 py-2 font-semibold text-gray-900">
-                  {o.numero}
-                </td>
-                <td className="px-3 py-2">{o.tipo}</td>
-                <td className="px-3 py-2">{o.contratoNumero}</td>
-                <td className="px-3 py-2">{o.fornecedor}</td>
-                <td className="px-3 py-2">{o.data}</td>
-                <td className="px-3 py-2 text-right font-medium text-gray-900">
-                  {formatMoneyBRL(o.total)}
-                </td>
-              </tr>
-            ))}
-            </tbody>
-          </table>
+          <div className="w-full overflow-x-auto">
+            <div
+              className="
+                max-h-80 sm:max-h-96 overflow-y-auto
+                scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
+                hover:scrollbar-thumb-gray-400
+              "
+            >
+              <table className="min-w-full text-[11px] sm:text-sm border border-gray-200 border-collapse">
+                <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-10">
+                <tr>
+                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                    Nº
+                  </th>
+                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                    Tipo
+                  </th>
+                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                    Contrato
+                  </th>
+                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                    Fornecedor
+                  </th>
+                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
+                    Data
+                  </th>
+                  <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right border-b border-gray-200">
+                    V. Total
+                  </th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {orders.map((o) => (
+                  <tr
+                    key={o.id}
+                    className="bg-white odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-indigo-50/60 transition-colors"
+                    onClick={() => navigate(`/orders/${o.id}`)}
+                  >
+                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                      {o.numero}
+                    </td>
+                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 border-b border-gray-100">
+                      {o.tipo}
+                    </td>
+                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                      {o.contratoNumero}
+                    </td>
+                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                      {o.fornecedor}
+                    </td>
+                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                      {o.data}
+                    </td>
+                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums font-medium text-gray-900 whitespace-nowrap border-b border-gray-100">
+                      {formatMoneyBRL(o.total)}
+                    </td>
+                  </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </section>
     </div>
