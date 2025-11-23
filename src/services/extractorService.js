@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const extractorApi = axios.create({
-  baseURL: import.meta.env.EXTRACTOR_URL,
+  baseURL: import.meta.env.VITE_EXTRACTOR_URL,
 });
 
 export async function extractContractTable(file, onUploadProgress) {
