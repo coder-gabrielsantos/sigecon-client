@@ -483,15 +483,16 @@ function OrderItemsTable({ items = [] }) {
       </div>
 
       <div className="w-full overflow-x-auto">
-        {/* Scroll vertical sem card, só a tabela */}
+        {/* Scroll vertical sem card, tabela cobrindo toda a largura */}
         <div
           className="
+            w-full
             max-h-80 sm:max-h-96 overflow-y-auto
             scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300
             hover:scrollbar-thumb-gray-400
           "
         >
-          <table className="min-w-[760px] text-[11px] sm:text-sm border border-gray-200 border-collapse">
+          <table className="w-full text-[11px] sm:text-sm border border-gray-200 border-collapse">
             <thead className="bg-indigo-50 text-indigo-700 uppercase text-[10px] sm:text-xs sticky top-0 z-10">
             <tr>
               <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left border-b border-gray-200">
