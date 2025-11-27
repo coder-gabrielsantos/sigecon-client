@@ -10,19 +10,21 @@ import {
   getAllUsers,
 } from "../../services/authService";
 
-function formatCPF(value) {
+function formatCNPJ(value) {
   if (!value) return "";
-  const digits = String(value).replace(/\D/g, "").slice(0, 11);
+  const digits = String(value).replace(/\D/g, "").slice(0, 14);
 
-  const part1 = digits.slice(0, 3);
-  const part2 = digits.slice(3, 6);
-  const part3 = digits.slice(6, 9);
-  const part4 = digits.slice(9, 11);
+  const part1 = digits.slice(0, 2);
+  const part2 = digits.slice(2, 5);
+  const part3 = digits.slice(5, 8);
+  const part4 = digits.slice(8, 12);
+  const part5 = digits.slice(12, 14);
 
   let formatted = part1;
   if (part2) formatted += "." + part2;
   if (part3) formatted += "." + part3;
-  if (part4) formatted += "-" + part4;
+  if (part4) formatted += "/" + part4;
+  if (part5) formatted += "-" + part5;
 
   return formatted;
 }
@@ -61,7 +63,7 @@ export default function UserPage() {
   // Novo usuário (admin)
   const [newUserForm, setNewUserForm] = useState({
     nome: "",
-    cpf: "",
+    cnpj: "",
     role: "ADMIN",
   });
   const [newUserLoading, setNewUserLoading] = useState(false);
@@ -259,10 +261,10 @@ export default function UserPage() {
   function handleNewUserChange(e) {
     const { name, value } = e.target;
 
-    if (name === "cpf") {
+    if (name === "cnpj") {
       setNewUserForm((prev) => ({
         ...prev,
-        cpf: formatCPF(value),
+        cnpj: formatCNPJ(value),
       }));
       return;
     }
@@ -281,11 +283,11 @@ export default function UserPage() {
 
     const payload = {
       nome: newUserForm.nome.trim(),
-      cpf: newUserForm.cpf.replace(/\D/g, ""),
+      cnpj: newUserForm.cnpj.replace(/\D/g, ""),
       role: newUserForm.role,
     };
 
-    if (!payload.nome || !payload.cpf || !payload.role) {
+    if (!payload.nome || !payload.cnpj || !payload.role) {
       setNewUserError("Preencha todos os campos.");
       return;
     }
@@ -296,7 +298,7 @@ export default function UserPage() {
 
       setNewUserForm({
         nome: "",
-        cpf: "",
+        cnpj: "",
         role: "OPERADOR",
       });
       setNewUserSuccess("Usuário criado com sucesso.");
@@ -363,9 +365,11 @@ export default function UserPage() {
 
               <div className="space-y-1">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  CPF
+                  CNPJ
                 </p>
-                <p className="text-gray-900">{formatCPF(profile.cpf)}</p>
+                <p className="text-gray-900">
+                  {formatCNPJ(profile.cnpj)}
+                </p>
               </div>
             </div>
           ) : (
@@ -510,7 +514,7 @@ export default function UserPage() {
 
           {/* Form de criação */}
           <form className="space-y-4" onSubmit={handleCreateNewUser}>
-            {/* Linha 1: Nome + CPF */}
+            {/* Linha 1: Nome + CNPJ */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
                 <label
@@ -531,18 +535,18 @@ export default function UserPage() {
 
               <div className="space-y-1">
                 <label
-                  htmlFor="novo-cpf"
+                  htmlFor="novo-cnpj"
                   className="text-sm font-medium text-gray-700"
                 >
-                  CPF
+                  CNPJ
                 </label>
                 <Input
-                  id="novo-cpf"
-                  name="cpf"
+                  id="novo-cnpj"
+                  name="cnpj"
                   type="text"
                   inputMode="numeric"
-                  maxLength={14}
-                  value={newUserForm.cpf}
+                  maxLength={18}
+                  value={newUserForm.cnpj}
                   onChange={handleNewUserChange}
                   required
                 />
@@ -623,7 +627,7 @@ export default function UserPage() {
 
           {/* Lista de usuários cadastrados */}
           <div className="border-t border-gray-100 pt-5 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify_between">
               <p className="text-base font-semibold text-gray-900">
                 Usuários cadastrados
               </p>
@@ -649,7 +653,7 @@ export default function UserPage() {
                         Usuário
                       </th>
                       <th className="px-4 py-2 text-left font-semibold hidden sm:table-cell">
-                        CPF
+                        CNPJ
                       </th>
                       <th className="px-4 py-2 text-left font-semibold">
                         Perfil
@@ -659,8 +663,16 @@ export default function UserPage() {
                     <tbody className="divide-y divide-gray-100">
                     {[...users]
                       .sort((a, b) => {
-                        if (a.role === "ADMIN" && b.role !== "ADMIN") return -1;
-                        if (a.role !== "ADMIN" && b.role === "ADMIN") return 1;
+                        if (
+                          a.role === "ADMIN" &&
+                          b.role !== "ADMIN"
+                        )
+                          return -1;
+                        if (
+                          a.role !== "ADMIN" &&
+                          b.role === "ADMIN"
+                        )
+                          return 1;
                         return a.nome.localeCompare(b.nome);
                       })
                       .map((u) => (
@@ -678,16 +690,18 @@ export default function UserPage() {
                                   {u.nome}
                                 </p>
                                 <p className="text-[11px] text-gray-500 sm:hidden">
-                                  {formatCPF(u.cpf)}
+                                  {formatCNPJ(u.cnpj)}
                                 </p>
                               </div>
                             </div>
                           </td>
                           <td className="px-4 py-2 hidden sm:table-cell text-gray-700">
-                            {formatCPF(u.cpf)}
+                            {formatCNPJ(u.cnpj)}
                           </td>
                           <td className="px-4 py-2 text-gray-700 text-xs sm:text-sm">
-                            {u.role === "ADMIN" ? "Administrador" : "Operador"}
+                            {u.role === "ADMIN"
+                              ? "Administrador"
+                              : "Operador"}
                           </td>
                         </tr>
                       ))}

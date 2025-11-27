@@ -5,24 +5,26 @@ import Button from "../../components/ui/Button";
 import { useAuth } from "../../context/AuthContext.jsx";
 import banner from "../../utils/images/banner.png";
 
-function formatCPF(value) {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
+function formatCNPJ(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
 
-  const part1 = digits.slice(0, 3);
-  const part2 = digits.slice(3, 6);
-  const part3 = digits.slice(6, 9);
-  const part4 = digits.slice(9, 11);
+  const part1 = digits.slice(0, 2);
+  const part2 = digits.slice(2, 5);
+  const part3 = digits.slice(5, 8);
+  const part4 = digits.slice(8, 12);
+  const part5 = digits.slice(12, 14);
 
   let formatted = part1;
   if (part2) formatted += "." + part2;
   if (part3) formatted += "." + part3;
-  if (part4) formatted += "-" + part4;
+  if (part4) formatted += "/" + part4;
+  if (part5) formatted += "-" + part5;
 
   return formatted;
 }
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ cpf: "", password: "" });
+  const [form, setForm] = useState({ cnpj: "", password: "" });
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login, isAuthenticated, loading } = useAuth();
@@ -36,9 +38,9 @@ export default function LoginPage() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    if (name === "cpf") {
-      const formatted = formatCPF(value);
-      setForm((p) => ({ ...p, cpf: formatted }));
+    if (name === "cnpj") {
+      const formatted = formatCNPJ(value);
+      setForm((p) => ({ ...p, cnpj: formatted }));
     } else {
       setForm((p) => ({ ...p, [name]: value }));
     }
@@ -49,7 +51,7 @@ export default function LoginPage() {
     setError("");
 
     const { ok, message } = await login(
-      form.cpf.replace(/\D/g, ""),
+      form.cnpj.replace(/\D/g, ""),
       form.password
     );
     if (!ok) {
@@ -104,7 +106,7 @@ export default function LoginPage() {
                 Acesso ao sistema
               </p>
               <p className="text-s text-slate-400 mt-1">
-                Entre com seu CPF e senha para continuar.
+                Entre com seu CNPJ e senha para continuar.
               </p>
             </div>
           </div>
@@ -120,24 +122,24 @@ export default function LoginPage() {
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
-              {/* CPF */}
+              {/* CNPJ */}
               <div className="space-y-1.5">
                 <label
-                  htmlFor="cpf"
+                  htmlFor="cnpj"
                   className="text-sm font-medium text-slate-700"
                 >
-                  CPF
+                  CNPJ
                 </label>
                 <Input
-                  id="cpf"
-                  name="cpf"
+                  id="cnpj"
+                  name="cnpj"
                   type="text"
                   inputMode="numeric"
                   autoComplete="username"
-                  placeholder="000.000.000-00"
-                  value={form.cpf}
+                  placeholder="00.000.000/0000-00"
+                  value={form.cnpj}
                   onChange={handleChange}
-                  maxLength={14}
+                  maxLength={18}
                   required
                   className="text-sm"
                 />

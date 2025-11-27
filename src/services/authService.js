@@ -1,7 +1,7 @@
 import http from "./http";
 
-export async function loginRequest({ cpf, senha }) {
-  const { data } = await http.post("/auth/login", { cpf, senha });
+export async function loginRequest({ cnpj, senha }) {
+  const { data } = await http.post("/auth/login", { cnpj, senha });
   return data;
 }
 
@@ -11,8 +11,8 @@ export async function getMe() {
 }
 
 // ADMIN cria novo usuário (ADMIN ou OPERADOR)
-export async function adminCreateUser({ nome, cpf, role }) {
-  const { data } = await http.post("/usuarios", { nome, cpf, role });
+export async function adminCreateUser({ nome, cnpj, role }) {
+  const { data } = await http.post("/usuarios", { nome, cnpj, role });
   return data;
 }
 

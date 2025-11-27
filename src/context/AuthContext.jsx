@@ -1,5 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { loginRequest, saveSession, loadSession, clearSession, getMe } from "../services/authService";
+import {
+  loginRequest,
+  saveSession,
+  loadSession,
+  clearSession,
+  getMe,
+} from "../services/authService";
 
 const AuthContext = createContext(null);
 
@@ -23,15 +29,18 @@ export function AuthProvider({ children }) {
     bootstrap();
   }, [token]);
 
-  async function login(cpf, senha) {
+  async function login(cnpj, senha) {
     setLoading(true);
     try {
-      const data = await loginRequest({ cpf, senha });
+      const data = await loginRequest({ cnpj, senha });
       saveSession(data);
       setAuth({ user: data.user, token: data.token });
       return { ok: true, user: data.user };
     } catch (err) {
-      const msg = err?.response?.data?.message || "CPF ou senha inválidos.";
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "CNPJ ou senha inválidos.";
       return { ok: false, message: msg };
     } finally {
       setLoading(false);
