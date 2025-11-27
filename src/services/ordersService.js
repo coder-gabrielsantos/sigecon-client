@@ -18,20 +18,43 @@ export async function createOrder(payload) {
   return res.data;
 }
 
+/**
+ * Lista ordens (resumo para tabela).
+ */
 export async function listOrders() {
   const res = await http.get("/orders");
   return res.data;
 }
 
+/**
+ * Busca ordem completa (com itens) por ID.
+ */
 export async function getOrderById(id) {
   const res = await http.get(`/orders/${id}`);
   return res.data;
 }
 
 /**
- * Baixa a planilha XLSX da ordem já preenchida com base no template.
- * Envia junto os dados extras preenchidos no formulário da tela.
- *
+ * Atualiza itens da ordem (e eventualmente outros campos no futuro).
+ * payload típico:
+ * {
+ *   items: [{ orderItemId, quantity }]
+ * }
+ */
+export async function updateOrder(id, payload) {
+  const res = await http.put(`/orders/${id}`, payload);
+  return res.data;
+}
+
+/**
+ * Exclui uma ordem e seus itens.
+ */
+export async function deleteOrder(id) {
+  await http.delete(`/orders/${id}`);
+}
+
+/**
+ * Gera e baixa a planilha XLSX da ordem.
  * extras:
  * {
  *   orderTypeText,

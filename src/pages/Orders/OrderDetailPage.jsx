@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 import {
   getOrderById,
   downloadOrderXlsx,
+  updateOrder,
+  deleteOrder,
 } from "../../services/ordersService";
 import { getContractById } from "../../services/contractsService";
 
@@ -15,8 +18,8 @@ const EXPENSE_OPTIONS = [
 const MODALITY_OPTIONS = [
   "DISPENSA DE LICITAÇÃO",
   "INEXIGIBILIDADE DE LICITAÇÃO",
-  "CONC. PÚBLICA Nº",
-  "PREGÃO ELETRÔNICO Nº 001/2024",
+  "CONC. PÚBLICA",
+  "PREGÃO ELETRÔNICO",
   "OUTROS",
 ];
 
@@ -32,11 +35,22 @@ function formatMoneyBRL(v) {
 export default function OrderDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   const [order, setOrder] = useState(null);
   const [contract, setContract] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // edição
+  const [editMode, setEditMode] = useState(false);
+  const [editItems, setEditItems] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isDeleteOrderModalOpen, setIsDeleteOrderModalOpen] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editSuccess, setEditSuccess] = useState("");
 
   // Dados extras para preencher o XLSX
   const [xlsxExtras, setXlsxExtras] = useState({
@@ -66,6 +80,9 @@ export default function OrderDetailPage() {
       try {
         setLoading(true);
         setError("");
+        setEditError("");
+        setEditSuccess("");
+        setEditMode(false);
 
         const data = await getOrderById(id);
         if (!alive) return;
@@ -94,6 +111,17 @@ export default function OrderDetailPage() {
         };
 
         setOrder(formattedOrder);
+
+        // itens para edição (mantém a quantidade como string para input)
+        setEditItems(
+          (formattedOrder.items || []).map((it) => ({
+            ...it,
+            quantityInput:
+              it.quantity !== undefined && it.quantity !== null
+                ? String(it.quantity)
+                : "",
+          }))
+        );
 
         // Preenche defaults do formulário com base na ordem
         setXlsxExtras((prev) => {
@@ -156,6 +184,136 @@ export default function OrderDetailPage() {
         : [...prev.modalidadesSelecionadas, value];
       return { ...prev, modalidadesSelecionadas };
     });
+  }
+
+  // edição de itens
+  function handleEditItemQuantityChange(itemId, value) {
+    setEditItems((prev) =>
+      prev.map((it) => (it.id === itemId ? { ...it, quantityInput: value } : it))
+    );
+  }
+
+  const editedTotalAmount = useMemo(() => {
+    if (!editMode || !editItems.length) {
+      return order?.totalAmount ?? 0;
+    }
+    let total = 0;
+    for (const it of editItems) {
+      const raw = it.quantityInput ?? "";
+      if (!raw) continue;
+      const numeric = Number(
+        raw.toString().replace(/\./g, "").replace(",", ".")
+      );
+      if (!numeric || numeric <= 0) continue;
+      total += numeric * (it.unitPrice || 0);
+    }
+    return total;
+  }, [editMode, editItems, order]);
+
+  async function handleSaveEdits() {
+    if (!editMode) return;
+
+    setEditError("");
+    setEditSuccess("");
+
+    const itemsPayload = [];
+    for (const it of editItems) {
+      const raw = it.quantityInput ?? "";
+      const numeric = Number(
+        raw.toString().replace(/\./g, "").replace(",", ".")
+      );
+      if (!numeric || numeric <= 0) {
+        continue;
+      }
+      itemsPayload.push({
+        orderItemId: it.id,
+        quantity: numeric,
+      });
+    }
+
+    if (!itemsPayload.length) {
+      setEditError("Informe uma quantidade válida para pelo menos um item.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const updated = await updateOrder(id, { items: itemsPayload });
+
+      const formattedOrder = {
+        id: updated.id,
+        orderNumber: updated.orderNumber,
+        orderType: updated.orderType,
+        issueDate: updated.issueDate
+          ? new Date(updated.issueDate).toLocaleDateString("pt-BR")
+          : null,
+        justification: updated.justification,
+        referencePeriod: updated.referencePeriod,
+        totalAmount: Number(updated.totalAmount ?? 0),
+        contractId: updated.contractId,
+        items: (updated.items || []).map((it) => ({
+          id: it.id,
+          itemNo: it.itemNo ?? it.item_no,
+          description: it.description,
+          unit: it.unit,
+          quantity: Number(it.quantity ?? 0),
+          unitPrice: Number(it.unitPrice ?? it.unit_price ?? 0),
+          totalPrice: Number(it.totalPrice ?? it.total_price ?? 0),
+        })),
+      };
+
+      setOrder(formattedOrder);
+      setEditItems(
+        (formattedOrder.items || []).map((it) => ({
+          ...it,
+          quantityInput:
+            it.quantity !== undefined && it.quantity !== null
+              ? String(it.quantity)
+              : "",
+        }))
+      );
+      setEditMode(false);
+      setEditSuccess("Itens da ordem atualizados com sucesso.");
+      setTimeout(() => setEditSuccess(""), 2500);
+    } catch (e) {
+      console.error(e);
+      setEditError(
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        "Não foi possível salvar as alterações da ordem."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleOpenDeleteOrderModal() {
+    setIsDeleteOrderModalOpen(true);
+  }
+
+  function handleCloseDeleteOrderModal() {
+    if (deleteLoading) return;
+    setIsDeleteOrderModalOpen(false);
+  }
+
+  async function handleConfirmDeleteOrder() {
+    try {
+      setEditError("");
+      setEditSuccess("");
+      setDeleteLoading(true);
+      await deleteOrder(id);
+      navigate("/orders");
+    } catch (e) {
+      console.error(e);
+      setEditError(
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        "Não foi possível excluir a ordem."
+      );
+    } finally {
+      setDeleteLoading(false);
+      setIsDeleteOrderModalOpen(false);
+    }
   }
 
   async function handleDownloadXlsx() {
@@ -254,6 +412,22 @@ export default function OrderDetailPage() {
           </button>
         </div>
       </header>
+
+      {/* mensagens de erro/sucesso da edição */}
+      {(editError || editSuccess) && (
+        <div className="space-y-2">
+          {editError && (
+            <p className="text-xs sm:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {editError}
+            </p>
+          )}
+          {editSuccess && (
+            <p className="text-xs sm:text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              {editSuccess}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Form para preencher campos do XLSX */}
       <section className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-3 sm:p-5 space-y-4 sm:space-y-5">
@@ -431,7 +605,7 @@ export default function OrderDetailPage() {
               Total da ordem
             </p>
             <p className="text-sm sm:text-lg font-semibold text-gray-900">
-              {formatMoneyBRL(order.totalAmount)}
+              {formatMoneyBRL(editedTotalAmount)}
             </p>
           </div>
         </div>
@@ -446,24 +620,83 @@ export default function OrderDetailPage() {
         </div>
       </section>
 
-      {/* Itens da ordem - padrão igual ao ContractDetailPage */}
-      <OrderItemsTable items={order.items}/>
+      {/* Itens da ordem */}
+      <section className="space-y-2 sm:space-y-3 mt-2 sm:mt-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">
+              Itens desta ordem
+            </h2>
+            <span className="text-xs sm:text-sm text-gray-500">
+              {editMode ? editItems.length : order.items.length} itens
+            </span>
+          </div>
+
+          {isAdmin && (
+            <div className="flex items-center gap-2 self-start">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditError("");
+                  setEditSuccess("");
+                  setEditMode((prev) => !prev);
+                }}
+                className="text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100"
+              >
+                {editMode ? "Cancelar edição" : "Editar itens"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenDeleteOrderModal}
+                disabled={deleteLoading}
+                className="text-xs sm:text-sm text-red-600 hover:text-red-700 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 disabled:opacity-60"
+              >
+                {deleteLoading ? "Excluindo..." : "Excluir ordem"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <OrderItemsTable
+          items={editMode ? editItems : order.items}
+          editable={isAdmin && editMode}
+          onChangeQuantity={handleEditItemQuantityChange}
+        />
+
+        {isAdmin && editMode && (
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveEdits}
+              disabled={saving}
+              className="text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-500 hover:border-indigo-500 disabled:opacity-60"
+            >
+              {saving ? "Salvando..." : "Salvar alterações"}
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* Modal de confirmação para excluir ordem */}
+      {isDeleteOrderModalOpen && (
+        <DeleteOrderModal
+          open={isDeleteOrderModalOpen}
+          onClose={handleCloseDeleteOrderModal}
+          onConfirm={handleConfirmDeleteOrder}
+          loading={deleteLoading}
+        />
+      )}
     </div>
   );
 }
 
 /* ===================== TABELA “SOLTA” COM SCROLL E BORDAS RETAS ===================== */
 
-function OrderItemsTable({ items = [] }) {
+function OrderItemsTable({ items = [], editable = false, onChangeQuantity }) {
   if (!items.length) {
     return (
       <section className="mt-2 sm:mt-3">
-        <div className="flex items-center justify-between mb-1 sm:mb-2">
-          <h2 className="text-sm sm:text-base font-semibold text-gray-900">
-            Itens desta ordem
-          </h2>
-          <span className="text-xs sm:text-sm text-gray-500">0 itens</span>
-        </div>
         <p className="text-xs sm:text-sm text-gray-500">
           Nenhum item vinculado a esta ordem.
         </p>
@@ -471,19 +704,20 @@ function OrderItemsTable({ items = [] }) {
     );
   }
 
-  return (
-    <section className="space-y-2 sm:space-y-3 mt-2 sm:mt-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm sm:text-base font-semibold text-gray-900">
-          Itens desta ordem
-        </h2>
-        <span className="text-xs sm:text-sm text-gray-500">
-          {items.length} itens
-        </span>
-      </div>
+  // total para o rodapé (já considerando edição, se houver)
+  const totalSum = items.reduce((acc, it) => {
+    let qtyRaw = editable ? it.quantityInput ?? "" : it.quantity;
+    if (!qtyRaw) return acc;
+    const numeric = Number(
+      qtyRaw.toString().replace(/\./g, "").replace(",", ".")
+    );
+    if (!numeric || numeric <= 0) return acc;
+    return acc + numeric * (it.unitPrice || 0);
+  }, 0);
 
+  return (
+    <section>
       <div className="w-full overflow-x-auto">
-        {/* Scroll vertical sem card, tabela cobrindo toda a largura */}
         <div
           className="
             w-full
@@ -517,33 +751,70 @@ function OrderItemsTable({ items = [] }) {
             </thead>
 
             <tbody>
-            {items.map((it) => (
-              <tr
-                key={it.id}
-                className="bg-white odd:bg-white even:bg-gray-50"
-              >
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
-                  {it.itemNo ?? "-"}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 border-b border-gray-100">
-                    <span className="font-medium text-gray-800">
-                      {it.description}
-                    </span>
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 whitespace-nowrap text-gray-700 border-b border-gray-100">
-                  {it.unit || "—"}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap text-gray-700 border-b border-gray-100">
-                  {it.quantity}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap text-gray-700 border-b border-gray-100">
-                  {formatMoneyBRL(it.unitPrice)}
-                </td>
-                <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap font-medium text-gray-900 border-b border-gray-100">
-                  {formatMoneyBRL(it.totalPrice)}
-                </td>
-              </tr>
-            ))}
+            {items.map((it) => {
+              const qtyRaw = editable ? it.quantityInput ?? "" : it.quantity;
+              const numeric = Number(
+                (qtyRaw ?? "")
+                  .toString()
+                  .replace(/\./g, "")
+                  .replace(",", ".")
+              );
+              const lineTotal =
+                !numeric || numeric <= 0
+                  ? 0
+                  : numeric * (it.unitPrice || 0);
+
+              return (
+                <tr
+                  key={it.id}
+                  className="bg-white odd:bg-white even:bg-gray-50"
+                >
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-gray-700 whitespace-nowrap border-b border-gray-100">
+                    {it.itemNo ?? "-"}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 border-b border-gray-100">
+                      <span className="font-medium text-gray-800">
+                        {it.description}
+                      </span>
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 whitespace-nowrap text-gray-700 border-b border-gray-100">
+                    {it.unit || "—"}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap text-gray-700 border-b border-gray-100">
+                    {editable ? (
+                      <input
+                        type="text"
+                        className="
+                          w-full max-w-[80px]
+                          rounded-lg
+                          border border-gray-300
+                          px-2 py-1
+                          text-[11px] sm:text-sm
+                          text-right text-gray-800
+                          focus:outline-none
+                          focus:border-indigo-500
+                          focus:ring-0
+                        "
+                        placeholder="0"
+                        value={qtyRaw ?? ""}
+                        onChange={(e) =>
+                          onChangeQuantity && onChangeQuantity(it.id, e.target.value)
+                        }
+                      />
+
+                    ) : (
+                      it.quantity
+                    )}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap text-gray-700 border-b border-gray-100">
+                    {formatMoneyBRL(it.unitPrice)}
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right whitespace-nowrap font-medium text-gray-900 border-b border-gray-100">
+                    {formatMoneyBRL(lineTotal)}
+                  </td>
+                </tr>
+              );
+            })}
             </tbody>
 
             <tfoot>
@@ -555,9 +826,7 @@ function OrderItemsTable({ items = [] }) {
                 Total dos itens
               </td>
               <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right font-semibold text-gray-900">
-                {formatMoneyBRL(
-                  items.reduce((acc, it) => acc + (it.totalPrice || 0), 0)
-                )}
+                {formatMoneyBRL(totalSum)}
               </td>
             </tr>
             </tfoot>
@@ -565,5 +834,69 @@ function OrderItemsTable({ items = [] }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/* ===================== MODAL EXCLUSÃO ORDEM ===================== */
+
+function DeleteOrderModal({ open, onClose, onConfirm, loading }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm px-3 sm:px-4">
+      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-gray-200">
+        <div className="px-4 sm:px-6 pt-4 pb-3 border-b border-gray-100 flex items-start justify-between">
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+              Excluir ordem
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-3 inline-flex items-center justify-center rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+          >
+            <span className="sr-only">Fechar</span>
+            <svg
+              className="h-4 w-4 sm:h-5 sm:w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 8.586 4.293 2.879A1 1 0 0 0 2.879 4.293L8.586 10l-5.707 5.707a1 1 0 1 0 1.414 1.414L10 11.414l5.707 5.707a1 1 0 0 0 1.414-1.414L11.414 10l5.707-5.707A1 1 0 0 0 15.707 2.88L10 8.586Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-4 sm:px-6 pt-4 pb-4 sm:pb-5 space-y-4">
+          <p className="text-xs sm:text-sm text-gray-600">
+            Tem certeza que deseja excluir esta ordem? Todos os itens vinculados
+            serão removidos.
+          </p>
+
+          <div className="mt-2 flex flex-col sm:flex-row sm:justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-xs sm:text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-xl"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={loading}
+              className="text-xs sm:text-sm font-semibold text-white bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl shadow-sm disabled:opacity-60"
+            >
+              {loading ? "Excluindo..." : "Excluir ordem"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
