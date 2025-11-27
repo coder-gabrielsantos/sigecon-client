@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { User as UserIcon, Shield, LockKeyhole } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { User as UserIcon, Shield, LockKeyhole, CornerDownRight } from "lucide-react";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import {
@@ -321,6 +321,44 @@ export default function UserPage() {
     }
   }
 
+  // --------- Agrupamento: Admin + Operadores vinculados ----------
+  const groupedRows = useMemo(() => {
+    if (!users || users.length === 0) return [];
+
+    const admins = users
+      .filter((u) => u.role === "ADMIN")
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+
+    const operators = users
+      .filter((u) => u.role !== "ADMIN")
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+
+    const rows = [];
+
+    admins.forEach((admin) => {
+      rows.push({ kind: "ADMIN", user: admin });
+
+      const adminOperators = operators.filter(
+        (op) => op.adminId === admin.id
+      );
+
+      adminOperators.forEach((op) => {
+        rows.push({ kind: "OPERATOR", user: op });
+      });
+    });
+
+    // Operadores que não têm admin vinculado ou admin não existe
+    const orphanOperators = operators.filter(
+      (op) => !admins.some((ad) => ad.id === op.adminId)
+    );
+
+    orphanOperators.forEach((op) => {
+      rows.push({ kind: "OPERATOR_ORPHAN", user: op });
+    });
+
+    return rows;
+  }, [users]);
+
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       {/* Cabeçalho da página */}
@@ -367,9 +405,7 @@ export default function UserPage() {
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   CNPJ
                 </p>
-                <p className="text-gray-900">
-                  {formatCNPJ(profile.cnpj)}
-                </p>
+                <p className="text-gray-900">{formatCNPJ(profile.cnpj)}</p>
               </div>
             </div>
           ) : (
@@ -661,30 +697,32 @@ export default function UserPage() {
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                    {[...users]
-                      .sort((a, b) => {
-                        if (
-                          a.role === "ADMIN" &&
-                          b.role !== "ADMIN"
-                        )
-                          return -1;
-                        if (
-                          a.role !== "ADMIN" &&
-                          b.role === "ADMIN"
-                        )
-                          return 1;
-                        return a.nome.localeCompare(b.nome);
-                      })
-                      .map((u) => (
+                    {groupedRows.map((row) => {
+                      const u = row.user;
+                      const isAdminRow = row.kind === "ADMIN";
+                      const isOperatorRow =
+                        row.kind === "OPERATOR" ||
+                        row.kind === "OPERATOR_ORPHAN";
+
+                      return (
                         <tr
-                          key={u.id}
+                          key={`${row.kind}-${u.id}`}
                           className="text-gray-700 hover:bg-gray-50 transition-colors"
                         >
+                          {/* Coluna Usuário */}
                           <td className="px-4 py-2">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700">
-                                {getInitials(u.nome)}
-                              </div>
+                            <div
+                              className={`flex items-center gap-3 ${
+                                isOperatorRow ? "pl-5" : ""
+                              }`}
+                            >
+                              {isOperatorRow && (
+                                <>
+                                  <CornerDownRight className="h-4 w-4 text-gray-500"/>
+                                  <div className="h-full border-l border-dashed border-gray-300 mr-1"/>
+                                </>
+                              )}
+
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-medium text-gray-900">
                                   {u.nome}
@@ -695,16 +733,21 @@ export default function UserPage() {
                               </div>
                             </div>
                           </td>
+
+                          {/* Coluna CNPJ (desktop) */}
                           <td className="px-4 py-2 hidden sm:table-cell text-gray-700">
                             {formatCNPJ(u.cnpj)}
                           </td>
+
+                          {/* Coluna Perfil */}
                           <td className="px-4 py-2 text-gray-700 text-xs sm:text-sm">
-                            {u.role === "ADMIN"
+                            {isAdminRow
                               ? "Administrador"
                               : "Operador"}
                           </td>
                         </tr>
-                      ))}
+                      );
+                    })}
                     </tbody>
                   </table>
                 </div>
