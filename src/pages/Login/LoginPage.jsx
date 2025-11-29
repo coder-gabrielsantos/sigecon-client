@@ -25,15 +25,30 @@ function formatCNPJ(value) {
 
 export default function LoginPage() {
   const [form, setForm] = useState({ cnpj: "", password: "" });
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login, isAuthenticated, loading } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
+  // Se já estiver autenticado, manda para o dashboard
   useEffect(() => {
     if (isAuthenticated) navigate("/dashboard", { replace: true });
   }, [isAuthenticated, navigate]);
+
+  // Carrega CNPJ salvo (se tiver) e marca o checkbox
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedCnpj = window.localStorage.getItem("savedCnpj");
+    if (savedCnpj) {
+      setForm((prev) => ({
+        ...prev,
+        cnpj: formatCNPJ(savedCnpj),
+      }));
+      setRememberMe(true);
+    }
+  }, []);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -50,13 +65,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    const { ok, message } = await login(
-      form.cnpj.replace(/\D/g, ""),
-      form.password
-    );
+    const rawCnpj = form.cnpj.replace(/\D/g, "");
+
+    const { ok, message } = await login(rawCnpj, form.password);
     if (!ok) {
       setError(message || "Falha no login.");
       return;
+    }
+
+    // Salvar ou remover CNPJ do localStorage conforme o checkbox
+    if (typeof window !== "undefined") {
+      if (rememberMe) {
+        window.localStorage.setItem("savedCnpj", rawCnpj);
+      } else {
+        window.localStorage.removeItem("savedCnpj");
+      }
     }
 
     const redirect = params.get("redirectTo");
@@ -75,7 +98,7 @@ export default function LoginPage() {
             backgroundImage: `url(${banner})`,
           }}
         />
-        <div className="absolute inset-0 bg-black/55"/>
+        <div className="absolute inset-0 bg-black/55" />
 
         <div className="relative z-10 flex flex-col justify-between p-10 w-full">
           <div className="flex items-center gap-3">
@@ -187,10 +210,10 @@ export default function LoginPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-5 0-9.27-3.11-11-8 1.027-2.977 2.993-5.298 5.39-6.68"/>
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c5 0 9.27 3.11 11 8-.51 1.48-1.23 2.8-2.13 3.93"/>
-                        <path d="M14.12 9.88A3 3 0 0 1 9.88 14.12"/>
-                        <path d="m1 1 22 22"/>
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-5 0-9.27-3.11-11-8 1.027-2.977 2.993-5.298 5.39-6.68" />
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c5 0 9.27 3.11 11 8-.51 1.48-1.23 2.8-2.13 3.93" />
+                        <path d="M14.12 9.88A3 3 0 0 1 9.88 14.12" />
+                        <path d="m1 1 22 22" />
                       </svg>
                     ) : (
                       // ícone olho aberto
@@ -204,12 +227,27 @@ export default function LoginPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        <path d="M1 12C2.73 7.11 7 4 12 4s9.27 3.11 11 8c-1.73 4.89-6 8-11 8S2.73 16.89 1 12Z"/>
-                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M1 12C2.73 7.11 7 4 12 4s9.27 3.11 11 8c-1.73 4.89-6 8-11 8S2.73 16.89 1 12Z" />
+                        <circle cx="12" cy="12" r="3" />
                       </svg>
                     )}
                   </button>
                 </div>
+              </div>
+
+              {/* Lembrar login */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs sm:text-sm text-slate-600">
+                    Lembrar meu login (CNPJ)
+                  </span>
+                </label>
               </div>
 
               {error && (
@@ -218,11 +256,7 @@ export default function LoginPage() {
                 </p>
               )}
 
-              <Button
-                type="submit"
-                className="w-full mt-2"
-                disabled={loading}
-              >
+              <Button type="submit" className="w-full mt-2" disabled={loading}>
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>

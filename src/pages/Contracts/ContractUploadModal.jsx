@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, PlusCircle } from "lucide-react";
+import { FileSpreadsheet, PlusCircle } from "lucide-react";
 import Modal from "../../components/ui/Modal";
 import UploadDropzone from "../../components/ui/UploadDropzone";
 import { extractContractTable } from "../../services/extractorService";
@@ -40,7 +40,7 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
     setOk(false);
 
     if (!file) {
-      setErr("Anexe o PDF do contrato.");
+      setErr("Anexe o arquivo XLSX do contrato.");
       return;
     }
 
@@ -150,7 +150,7 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
                 }`}
               >
-                Importar PDF
+                Importar XLSX
               </button>
               <button
                 type="button"
@@ -167,17 +167,17 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
             </div>
           </div>
 
-          {/* opção: importar pdf */}
+          {/* opção: importar XLSX */}
           {mode === "upload" && (
             <section className="animate-fadeInUp rounded-2xl border border-slate-200 bg-slate-50/60 px-3.5 py-3.5 sm:px-4 sm:py-4 space-y-3">
               <div className="flex items-start gap-3">
                 <div className="flex-1 space-y-1">
                   <p className="text-sm sm:text-base font-semibold text-slate-900">
-                    Importar PDF do contrato
+                    Importar planilha do contrato (XLSX)
                   </p>
                   <p className="text-xs sm:text-sm text-slate-500">
                     O sistema tenta ler automaticamente itens, quantidades e
-                    valores a partir do arquivo PDF.
+                    valores a partir da planilha Excel.
                   </p>
                 </div>
               </div>
@@ -185,9 +185,9 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
               <UploadDropzone
                 file={file}
                 onFileChange={setFile}
-                accept=".pdf"
+                accept=".xlsx,.xlsm,.xltx,.xltm"
                 disabled={isBusy}
-                label="Selecione ou arraste um arquivo PDF para enviar"
+                label="Selecione ou arraste um arquivo XLSX (Excel) para enviar"
                 helperText="Suporta arquivos de até 20 MB"
               />
 
@@ -200,12 +200,12 @@ export default function ContractUploadModal({ open, onClose, onUploaded }) {
                 {submitting ? (
                   <>
                     <span className="h-3 w-3 animate-spin rounded-full border-[2px] border-white/60 border-t-transparent"/>
-                    Processando PDF...
+                    Processando planilha...
                   </>
                 ) : (
                   <>
-                    <FileText className="h-4 w-4"/>
-                    Importar PDF do contrato
+                    <FileSpreadsheet className="h-4 w-4"/>
+                    Importar XLSX do contrato
                   </>
                 )}
               </button>

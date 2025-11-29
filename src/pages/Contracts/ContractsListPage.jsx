@@ -201,7 +201,7 @@ export default function ContractsListPage() {
         </div>
       </section>
 
-      {/* Modal — upload de PDF */}
+      {/* Modal — upload de XLSX */}
       <ContractUploadModal
         open={isUploadOpen}
         onClose={() => setUploadOpen(false)}
