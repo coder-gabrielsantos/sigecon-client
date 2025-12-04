@@ -266,7 +266,7 @@ export default function LoginPage() {
           <p className="mt-4 text-[12px] text-center text-slate-400">
             Desenvolvido por{" "}
             <a
-              href="https://jogabriel-santos.vercel.app/"
+              href="https://coder-gabrielsantos.com/"
               target="_blank"
               rel="noreferrer"
               className="text-xs font-semibold text-slate-100 underline underline-offset-2 hover:text-slate-50"
