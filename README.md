@@ -1,4 +1,4 @@
-# SIGECON – Sistema de Gestão de Contratos e Ordens de Serviço
+# SIGECON – Sistema de Gestão de Contratos
 
 SIGECON é uma plataforma web desenvolvida para automatizar e centralizar a gestão de contratos municipais e a geração de ordens de serviço. O sistema substitui fluxos manuais baseados em planilhas por processos digitais integrados, reduzindo erros, padronizando documentos e aumentando a eficiência operacional.
 
