@@ -1,16 +1,72 @@
-# React + Vite
+# SIGECON – Sistema de Gestão de Contratos
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SIGECON é uma plataforma web desenvolvida para automatizar e centralizar a gestão de contratos municipais e a geração de ordens de serviço. O sistema substitui fluxos manuais baseados em planilhas por processos digitais integrados, reduzindo erros, padronizando documentos e aumentando a eficiência operacional.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Principais Funcionalidades
 
-## React Compiler
+### Extração Automática de Dados
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* Microserviço capaz de processar documentos enviados e extrair informações essenciais dos contratos.
+* Preenchimento automático da base de dados, eliminando entradas manuais e acelerando o registro de contratos.
 
-## Expanding the ESLint configuration
+### Geração Padronizada de Ordens de Serviço
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+* Motor avançado para criação automática de ordens de serviço em Excel.
+* Realiza cálculos, deduções, formatação e organização dos itens de forma consistente e auditável.
+
+### Gestão Centralizada de Contratos
+
+* Registro completo de contratos e itens contratados.
+* Controle de saldo e histórico de utilização com atualização em tempo real.
+
+### Relatórios e Documentos
+
+* Emissão de relatórios em PDF e exportação de dados estruturados.
+* Documentação padronizada para auditorias e acompanhamento administrativo.
+
+### Autenticação e Segurança
+
+* Sistema de login, gerenciamento de usuários e controle de permissões.
+* Arquitetura voltada para ambientes institucionais, com foco em integridade dos dados.
+
+---
+
+## Benefícios
+
+* Redução significativa de processos manuais.
+* Minimização de erros de cálculo e inconsistências em documentos.
+* Centralização das informações e melhor rastreabilidade.
+* Agilidade na criação e gestão de ordens de serviço.
+* Padronização dos documentos emitidos.
+
+---
+
+## Público-Alvo
+
+* Prefeituras e órgãos municipais
+* Departamentos de licitações e contratos
+* Setores de obras, infraestrutura e serviços
+* Equipes administrativas que dependem de controle contratual e documentações recorrentes
+
+---
+
+## Arquitetura do Sistema
+
+O SIGECON é composto por:
+
+* Aplicação web para gestão de contratos, ordens de serviço e usuários
+* Microserviço de extração automática de dados
+* Mecanismo de geração automatizada de planilhas Excel
+* APIs de comunicação interna e suporte a integrações futuras
+
+---
+
+## Status do Projeto
+
+O sistema está plenamente operacional e preparado para futuras expansões, incluindo:
+
+* Dashboards analíticos
+* Integrações com sistemas governamentais
+* Notificações automáticas de vencimentos e consumo de contratos
